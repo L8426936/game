@@ -13,7 +13,7 @@ public class MostLinkLinkTest {
 //		};
 //		MostLinkLinkUtil.printStatus(status);
 //		int count = 25, startRow = 0, startCol = 2;
-//		NodeTree nodeTree = new NodeTree(status, count, startRow, startCol);
+//		MostLinkLinkNodeTree nodeTree = new MostLinkLinkNodeTree(status, count, startRow, startCol);
 //		nodeTree.DFS();
 		// --------------------------------------------------------------------------------------------------------
 		MostLinkLinkUtil.autoPlay();

@@ -26,8 +26,8 @@ public class MostLinkLinkUtil {
 				screenshot();
 				GameStatus gameStatus = analysisScreenshot();
 				if (gameStatus != null) {
-					NodeTree nodeTree = new NodeTree(gameStatus.getStatus(), gameStatus.getCount(), gameStatus.getStartRow(), gameStatus.getStartCol());
-					Node[] nodes = nodeTree.DFS();
+					MostLinkLinkNodeTree nodeTree = new MostLinkLinkNodeTree(gameStatus.getStatus(), gameStatus.getCount(), gameStatus.getStartRow(), gameStatus.getStartCol());
+					MostLinkLinkNode[] nodes = nodeTree.DFS();
 					if (nodes != null) {
 						play(nodes);
 						nextGame();
@@ -86,7 +86,7 @@ public class MostLinkLinkUtil {
 	}
 
 	// 触摸滑动灰格
-	private static void play(Node[] nodes) throws Exception {
+	private static void play(MostLinkLinkNode[] nodes) throws Exception {
 		for (int i = 1; i < nodes.length; i++) {
 			int j = i;
 			while (j + 1 < nodes.length && (nodes[i].getRow() == nodes[j + 1].getRow() || nodes[i].getCol() == nodes[j + 1].getCol())) {

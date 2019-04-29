@@ -7,17 +7,17 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class NodeTree {
+public class MostLinkLinkNodeTree {
 
 	private int[][] status; // 盘面
 	private long target; // 目标状态值
-	private Node[] solvedNodes; // 通关节点
-	private List<Map<Long, Node>> nodes; // 已搜索路径
-	private Deque<Node> deque; // 未搜索路径
+	private MostLinkLinkNode[] solvedNodes; // 通关节点
+	private List<Map<Long, MostLinkLinkNode>> nodes; // 已搜索路径
+	private Deque<MostLinkLinkNode> deque; // 未搜索路径
 	private long sum; // 搜索节点数量
 	private long[] values; // 存放2^n
 
-	public NodeTree(int[][] status, int[][] startPoints, long target) {
+	public MostLinkLinkNodeTree(int[][] status, int[][] startPoints, long target) {
 		this.status = status;
 		this.target = target;
 		nodes = new ArrayList<>(startPoints.length);
@@ -36,7 +36,7 @@ public class NodeTree {
 			int index = getIndex(startPoints[i][0], startPoints[i][1]);
 			long value = getValue(index);
 
-			Node node = new Node();
+			MostLinkLinkNode node = new MostLinkLinkNode();
 			node.setValue(value);
 			node.setRow(startPoints[i][0]);
 			node.setCol(startPoints[i][1]);
@@ -45,7 +45,7 @@ public class NodeTree {
 			nodes.get(i).put(value, node);
 			sum++;
 		}
-		solvedNodes = new Node[startPoints.length];
+		solvedNodes = new MostLinkLinkNode[startPoints.length];
 	}
 
 	private int[][] directions = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}}; // 上、右、下、左
@@ -54,14 +54,14 @@ public class NodeTree {
 	public void search(boolean dfs) {
 		long startTime = System.currentTimeMillis();
 		while (!deque.isEmpty()) {
-			Node parent = deque.poll();
+			MostLinkLinkNode parent = deque.poll();
 			for (int direction = 0; direction < directions.length; direction++) {
 				if (solved(parent)) {
 					printSearchInfo(startTime);
 					TheSameWorldUtil.printPath(status, solvedNodes);
 					return;
 				} else {
-					Node childNode = nextStep(parent, direction);
+					MostLinkLinkNode childNode = nextStep(parent, direction);
 					if (childNode != null) {
 						sum++;
 						if (dfs) {
@@ -77,7 +77,7 @@ public class NodeTree {
 	}
 
 	// 走一步
-	private Node nextStep(Node parent, int direction) {
+	private MostLinkLinkNode nextStep(MostLinkLinkNode parent, int direction) {
 		int childRow = parent.getRow() + directions[direction][0];
 		int childCol = parent.getCol() + directions[direction][1];
 		if (childRow < 0 || childRow >= status.length || childCol < 0 || childCol >= status[childRow].length || status[childRow][childCol] == 0) {
@@ -88,7 +88,7 @@ public class NodeTree {
 			return null;
 		}
 		long childValue = parent.getValue() | getValue(childIndex);
-		Node childNode = new Node();
+		MostLinkLinkNode childNode = new MostLinkLinkNode();
 		childNode.setParent(parent);
 		childNode.setValue(childValue);
 		childNode.setRow(childRow);
@@ -104,7 +104,7 @@ public class NodeTree {
 	}
 
 	// 检查是否是符合目标的路径
-	private boolean solved(Node node) {
+	private boolean solved(MostLinkLinkNode node) {
 		long nextTarget = target;
 		for (int i = 0; i < solvedNodes.length && node != null; i++) {
 			nextTarget = nextTarget ^ node.getValue();

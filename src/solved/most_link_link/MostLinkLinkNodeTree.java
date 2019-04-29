@@ -1,17 +1,17 @@
 package solved.most_link_link;
 
-public class NodeTree {
+public class MostLinkLinkNodeTree {
 
 	private char[][] status;
-	private Node[] nodes;
+	private MostLinkLinkNode[] nodes;
 	private int count, nodesIndex, sum; // count方格数量，sum搜索的节点数量
 	
-	public NodeTree(char[][] status, int count, int startRow, int startCol) {
+	public MostLinkLinkNodeTree(char[][] status, int count, int startRow, int startCol) {
 		this.status = status;
 		this.count = count;
-		this.nodes = new Node[count];
-		
-		Node root = new Node();
+		this.nodes = new MostLinkLinkNode[count];
+
+		MostLinkLinkNode root = new MostLinkLinkNode();
 		root.setRow(startRow);
 		root.setCol(startCol);
 		this.nodes[nodesIndex] = root;
@@ -21,11 +21,11 @@ public class NodeTree {
 	
 	private int[][] directions = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}}; // 上、右、下、左
 	// 深度优先搜索
-	public Node[] DFS() {
+	public MostLinkLinkNode[] DFS() {
 		long startTime = System.currentTimeMillis();
 		OVER:
 			while (nodes[0].getDirectionCount() < directions.length) {
-				Node parent = nodes[nodesIndex];
+				MostLinkLinkNode parent = nodes[nodesIndex];
 				int direction = parent.getDirection();
 				while (true) {
 					if (nodesIndex > 0 && parent.getDirectionCount() >= directions.length) { // 节点改变方向次数大于等于4次，即4个方向均尝试过，回退一个节点
@@ -36,7 +36,7 @@ public class NodeTree {
 						parent.setDirectionCount(parent.getDirectionCount() + 1);
 						break;
 					}
-					Node child = nextStep(parent, direction);
+					MostLinkLinkNode child = nextStep(parent, direction);
 					if (child != null) {
 						nodes[++nodesIndex] = parent = child;
 						sum++;
@@ -55,17 +55,17 @@ public class NodeTree {
 	}
 	
 	// 走一步
-	private Node nextStep(Node parent, int direction) {
+	private MostLinkLinkNode nextStep(MostLinkLinkNode parent, int direction) {
 		int childRow = parent.getRow() + directions[direction][0];
 		int childCol = parent.getCol() + directions[direction][1];
 		if (childRow < 0 || childRow >= status.length || childCol < 0 || childCol >= status[0].length || status[childRow][childCol] != MostLinkLinkUtil.EMPTY) {
 			return null;
 		}
-		Node child = nodes[nodesIndex + 1]; // 之前丢弃的节点重新利用，减少new的次数
+		MostLinkLinkNode child = nodes[nodesIndex + 1]; // 之前丢弃的节点重新利用，减少new的次数
 		if (child != null) {
 			child.setDirectionCount(0);
 		} else {
-			child = new Node();
+			child = new MostLinkLinkNode();
 		}
 		child.setRow(childRow);
 		child.setCol(childCol);

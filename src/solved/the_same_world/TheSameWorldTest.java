@@ -16,7 +16,7 @@ public class TheSameWorldTest {
 				{5, 0},
 				{5, 5}
 		};
-		NodeTree nodeTree = new NodeTree(status, startPoints, TheSameWorldUtil.getStatusValue(status, 1));
+		MostLinkLinkNodeTree nodeTree = new MostLinkLinkNodeTree(status, startPoints, TheSameWorldUtil.getStatusValue(status, 1));
 		nodeTree.search(true);
 	}
 

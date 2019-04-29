@@ -16,7 +16,7 @@ public class TheSameWorldUtil {
 		return value;
 	}
 	// 打印通关路径
-	public static void printPath(int[][] status, Node[] solvedNodes) {
+	public static void printPath(int[][] status, MostLinkLinkNode[] solvedNodes) {
 		for (int i = 0; i < solvedNodes.length; i++) {
 			char[][] singlePath = new char[status.length][];
 			for (int j = 0; j < status.length; j++) {
@@ -29,7 +29,7 @@ public class TheSameWorldUtil {
 					}
 				}
 			}
-			Node node = solvedNodes[i];
+			MostLinkLinkNode node = solvedNodes[i];
 			while (node != null) {
 				singlePath[node.getRow()][node.getCol()] = EXIST;
 				node = node.getParent();

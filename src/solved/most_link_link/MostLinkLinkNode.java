@@ -1,6 +1,6 @@
 package solved.most_link_link;
 
-public class Node {
+public class MostLinkLinkNode {
 	
 	private int row, col, direction, directionCount; // directionCount累计节点改变方向次数
 
