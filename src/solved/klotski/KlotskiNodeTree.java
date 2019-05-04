@@ -14,12 +14,12 @@ public class KlotskiNodeTree {
     /**
      * 队列头，尾索引
      */
-    private int head, rear = 1;
+    private int head, rear;
     /**
      * 已生成的布局
      */
     private boolean[] generated;
-    private boolean process = true;
+    private boolean keep = true;
     /**
      *
      * @param status 盘面
@@ -34,14 +34,15 @@ public class KlotskiNodeTree {
         root.setStatus(rootStatus);
 
         klotskiStatusCode = new KlotskiStatusCode(root.getStatus());
+        // queue长度必须是2^n
         queue = new KlotskiNode[1024];
         generated = new boolean[klotskiStatusCode.getTotal() + 1];
 
-        queue[head] = root;
+        queue[rear++] = root;
         generated[klotskiStatusCode.statusCoding(root.getStatus())] = true;
         generated[klotskiStatusCode.mirrorSymmetryStatusCoding(root.getStatus())] = true;
 
-        while (process && head != rear) {
+        while (keep && head != rear) {
             nextStep(queue[head++]);
             // 取模运算
             head &= queue.length - 1;
@@ -230,7 +231,7 @@ public class KlotskiNodeTree {
             }
             System.out.format("队列数组长度%d 实际队列数组长度%d 队列数组利用率%f%%%n", queue.length, rear - head,
                     ((float) (rear - head) / queue.length) * 100);
-            process = false;
+            keep = false;
             return;
         }
         int statusCode = klotskiStatusCode.statusCoding(childStatus);
