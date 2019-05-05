@@ -10,10 +10,10 @@ public class KlotskiStatusCode {
      * <p>数组下角标作为序号</p>
      * <p>下角标对应的数组值是第n个有m个1的序号</p>
      */
-    private final static int[] SEQUENCE = new int[2048];
+    private final static int[] SEQUENCE = new int[4096];
     static {
-        // 记录0~11个1的序号各有多少个
-        int[] count = new int[12];
+        // 记录0~12个1的序号各有多少个
+        int[] count = new int[13];
         for (int i = 0, index = 0, n = i; i < SEQUENCE.length; i++, index = 0, n = i) {
             while (n > 0) {
                 n &= (n - 1);
@@ -51,7 +51,7 @@ public class KlotskiStatusCode {
         }
 
         int HMaxSequence = KlotskiNodeUtil.maxCombinationNumber(KlotskiNodeUtil.BINARY_WEIGHTS[11], HC >> 1),
-                VMaxSequence = KlotskiNodeUtil.maxCombinationNumber(KlotskiNodeUtil.BINARY_WEIGHTS[12 - HC], VC >> 1);
+                VMaxSequence = KlotskiNodeUtil.maxCombinationNumber(KlotskiNodeUtil.BINARY_WEIGHTS[12], VC >> 1);
         TW = new int[12];
         HW = new int[SEQUENCE[HMaxSequence] + 1];
         VW = new int[SEQUENCE[VMaxSequence] + 1];

@@ -30,7 +30,7 @@ public class KlotskiNodeUtil {
     /**
      * 二进制权值
      */
-    public final static int BINARY_WEIGHTS[] = {1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048};
+    public final static int BINARY_WEIGHTS[] = {1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096};
 
     /**
      * 最大组合数
