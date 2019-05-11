@@ -2,268 +2,260 @@ package solved.klotski;
 
 public class KlotskiNodeTree {
 
-    private int[] rootStatus;
-    /**
-     * 盘面编码
-     */
-    private KlotskiStatusCode klotskiStatusCode;
     /**
      * 队列
      */
-    private KlotskiNode[] queue;
+    private KlotskiNodeQueue klotskiNodeQueue = new KlotskiNodeQueue();
+    private KlotskiNodeHashMap klotskiNodeHashMap;
     /**
-     * 队列头，尾索引
+     * 移动模式
      */
-    private int head, rear;
-    /**
-     * 已生成的布局
-     */
-    private boolean[] generated;
-    private boolean keep = true;
-    /**
-     *
-     * @param status 盘面
-     */
-    public KlotskiNodeTree(int[] status) {
-        this.rootStatus = status;
-    }
+    private int moveMode;
+    private final static int[] DIRECTIONS_OFFSET = {-1, 1, -4, 4};
 
-    public void BFS() {
+    public KlotskiNodeTree(int[] status, int moveMode) {
+        this.moveMode = moveMode;
+        klotskiNodeHashMap = new KlotskiNodeHashMap(status);
 
         KlotskiNode root = new KlotskiNode();
-        root.setStatus(rootStatus);
+        root.setStatus(status);
+        klotskiNodeQueue.offer(root);
 
-        klotskiStatusCode = new KlotskiStatusCode(root.getStatus());
-        // queue长度必须是2^n
-        queue = new KlotskiNode[1024];
-        generated = new boolean[klotskiStatusCode.getTotal() + 1];
+        klotskiNodeHashMap.put(root);
+    }
 
-        queue[rear++] = root;
-        generated[klotskiStatusCode.statusCoding(root.getStatus())] = true;
-        generated[klotskiStatusCode.mirrorSymmetryStatusCoding(root.getStatus())] = true;
+    public KlotskiNode[] BFS() {
+        while (!klotskiNodeQueue.isEmpty()) {
+            KlotskiNode parent = klotskiNodeQueue.poll();
+            int[] status = parent.getStatus();
+            if (KlotskiNodeUtil.INT_TO_CHAR_BY_TYPE[status[17]] == KlotskiNodeUtil.T
+                    && KlotskiNodeUtil.INT_TO_CHAR_BY_TYPE[status[18]] == KlotskiNodeUtil.T) {
+                int count = 0;
+                KlotskiNode klotskiNode = parent;
+                while (klotskiNode.getParent() != null) {
+                    count++;
+                    klotskiNode = klotskiNode.getParent();
+                }
+                KlotskiNode[] klotskiNodes = new KlotskiNode[count];
+                while (--count >= 0) {
+                    klotskiNodes[count] = parent;
+                    parent = parent.getParent();
+                }
+                return klotskiNodes;
+            }
+            nextStep(parent);
+        }
+        return null;
+    }
 
-        while (keep && head != rear) {
-            nextStep(queue[head++]);
-            // 取模运算
-            head &= queue.length - 1;
+    private void nextStep(KlotskiNode parent) {
+        int[] status = parent.getStatus();
+        int empty1Position = 0, empty2Position = 0, emptyCount = 0, doubleEmptyType = 0;
+        for (int i = 0; i < status.length; i++) {
+            if (KlotskiNodeUtil.INT_TO_CHAR_BY_TYPE[status[i]] == KlotskiNodeUtil.E) {
+                empty1Position = empty2Position;
+                empty2Position = i;
+                if (++emptyCount >= 2) {
+                    break;
+                }
+            }
+        }
+        if (KlotskiNodeUtil.COL[empty1Position] < 3 && empty1Position + 1 == empty2Position) {
+            // 空格横向联立
+            doubleEmptyType = 1;
+        } else if (empty1Position + 4 == empty2Position) {
+            // 空格纵向联立
+            doubleEmptyType = 2;
+        }
+        int[] empty1Around = singleEmpty(parent, empty1Position);
+        int[] empty2Around = singleEmpty(parent, empty2Position);
+        switch (doubleEmptyType) {
+            case 1:
+                horizontalDoubleEmpty(parent, empty1Around, empty2Around, empty1Position, empty2Position);
+                break;
+            case 2:
+                verticalDoubleEmpty(parent, empty1Around, empty2Around, empty1Position, empty2Position);
+                break;
+            default:
         }
     }
 
-    /**
-     * 生成子节点
-     * @param parent
-     */
-    private void nextStep(KlotskiNode parent) {
+    private int[] singleEmpty(KlotskiNode parent, int emptyPosition) {
+        // 记录空格四周
+        int[] emptyAround = new int[4];
         int[] status = parent.getStatus();
-        // RP1：空格1的位置；RP2：空格2的位置，DRT：空格联立的方式，默认不联立
-        int RP1 = 0, RP2 = 0, DRT = 0;
-        for (int i = 0, j = 0, length = status.length; j < 2 && i < length; i++) {
-            if (status[i] == 0) {
-                RP1 = RP2;
-                RP2 = i;
-                j++;
-            }
-        }
-        if (RP1 + 4 == RP2) {
-            // 空格竖联立
-            DRT = 1;
-        } else if (RP1 + 1 == RP2 && KlotskiNodeUtil.COL[RP1] < 3) {
-            // 空格横联立
-            DRT = 2;
-        }
-
-        // 记录已判断的棋子
-        boolean[] flag = new boolean[16];
-        for (int i = 0, length = status.length; i < length; i++) {
-            int intType = status[i], col = KlotskiNodeUtil.COL[i];
-            if (flag[intType]) {
-                continue;
-            }
-            char charType = KlotskiNodeUtil.TYPE[intType];
-            switch (charType) {
-                case KlotskiNodeUtil.T:
-                    if (i + 8 == RP1 && DRT == 2) {
-                        // 向下
-                        move(parent, i, i + 4);
-                    } else if (i - 4 == RP1 && DRT == 2) {
-                        // 向上
-                        move(parent, i, i - 4);
-                    } else if (col < 2 && i + 2 == RP1 && DRT == 1) {
-                        // 向右
-                        move(parent, i, i + 1);
-                    } else if (col > 0 && i - 1 == RP1 && DRT == 1) {
-                        // 向左
-                        move(parent, i, i - 1);
-                    }
-                    flag[intType] = true;
+        int typeIndex = 0, col = KlotskiNodeUtil.COL[emptyPosition], row = KlotskiNodeUtil.ROW[emptyPosition];
+        // 空格左移
+        if (col > 0) {
+            switch (KlotskiNodeUtil.INT_TO_CHAR_BY_TYPE[status[emptyPosition - 1]]) {
+                case KlotskiNodeUtil.S:
+                    move(parent, emptyPosition - 1, emptyPosition);
                     break;
                 case KlotskiNodeUtil.H:
-                    if (i + 4 == RP1 && DRT == 2) {
-                        // 向下
-                        move(parent, i, i + 4);
-                    } else if (i - 4 == RP1 && DRT == 2) {
-                        move(parent, i, i - 4);
-                        // 向上
-                    } else {
-                        if (col < 2 && (i + 2 == RP1 || i + 2 == RP2)) {
-                            // 向右
-                            move(parent, i, i + 1);
-                            if (DRT == 2) {
-                                move(parent, i, RP1);
-                            }
-                        } else if (col > 0 && (i - 1 == RP1 || i - 1 == RP2)) {
-                            // 向左
-                            move(parent, i, i - 1);
-                            if (DRT == 2) {
-                                move(parent, i, RP1);
-                            }
-                        }
-                    }
-                    flag[intType] = true;
+                    move(parent, emptyPosition - 2, emptyPosition - 1);
+                    break;
+                default:
+            }
+            emptyAround[typeIndex] = status[emptyPosition - 1];
+        }
+        typeIndex++;
+        // 空格右移
+        if (col < 3) {
+            switch (KlotskiNodeUtil.INT_TO_CHAR_BY_TYPE[status[emptyPosition + 1]]) {
+                case KlotskiNodeUtil.S:
+                case KlotskiNodeUtil.H:
+                    move(parent, emptyPosition + 1, emptyPosition);
+                    break;
+                default:
+            }
+            emptyAround[typeIndex] = status[emptyPosition + 1];
+        }
+        typeIndex++;
+        // 空格上移
+        if (row > 0) {
+            switch (KlotskiNodeUtil.INT_TO_CHAR_BY_TYPE[status[emptyPosition - 4]]) {
+                case KlotskiNodeUtil.S:
+                    move(parent, emptyPosition - 4, emptyPosition);
                     break;
                 case KlotskiNodeUtil.V:
-                    if (i + 8 == RP1 || i + 8 == RP2) {
-                        // 向下
-                        move(parent, i, i + 4);
-                        if (DRT  == 1) {
-                            move(parent, i, RP1);
-                        }
-                    } else if (i - 4 == RP1 || i - 4 == RP2) {
-                        // 向上
-                        move(parent, i, i - 4);
-                        if (DRT  == 1) {
-                            move(parent, i, RP1);
-                        }
-                    } else {
-                        if (col < 3 && i + 1 == RP1 && DRT == 1) {
-                            // 向右
-                            move(parent, i, i + 1);
-                        } else if (col > 0 && i - 1 == RP1 && DRT == 1) {
-                            // 向左
-                            move(parent, i, i - 1);
-                        }
-                    }
-                    flag[intType] = true;
+                    move(parent, emptyPosition - 8, emptyPosition - 4);
                     break;
+                default:
+            }
+            emptyAround[typeIndex] = status[emptyPosition - 4];
+        }
+        typeIndex++;
+        // 空格下移
+        if (row < 4) {
+            switch (KlotskiNodeUtil.INT_TO_CHAR_BY_TYPE[status[emptyPosition + 4]]) {
                 case KlotskiNodeUtil.S:
-                    if (i + 4 == RP1 || i + 4 == RP2) {
-                        if (DRT > 0) {
-                            move(parent, i, RP1);
-                            move(parent, i, RP2);
-                            continue;
-                        } else {
-                            // 向下
-                            move(parent, i, i + 4);
-                        }
-                    }
-                    if (i - 4 == RP1 || i - 4 == RP2) {
-                        if (DRT > 0) {
-                            move(parent, i, RP1);
-                            move(parent, i, RP2);
-                            continue;
-                        } else {
-                            // 向上
-                            move(parent, i, i - 4);
-                        }
-                    }
-                    if (col < 3 && (i + 1 == RP1 || i + 1 == RP2)) {
-                        if (DRT > 0) {
-                            move(parent, i, RP1);
-                            move(parent, i, RP2);
-                            continue;
-                        } else {
-                            // 向右
-                            move(parent, i, i + 1);
-                        }
-                    }
-                    if (col > 0 && (i - 1 == RP1 || i - 1 == RP2)) {
-                        if (DRT > 0) {
-                            move(parent, i, RP1);
-                            move(parent, i, RP2);
-                        } else {
-                            // 向左
-                            move(parent, i, i - 1);
-                        }
-                    }
+                case KlotskiNodeUtil.V:
+                    move(parent, emptyPosition + 4, emptyPosition);
                     break;
+                default:
+            }
+            emptyAround[typeIndex] = status[emptyPosition + 4];
+        }
+        return emptyAround;
+    }
+
+    private void horizontalDoubleEmpty(KlotskiNode parent, int[] empty1Around, int[] empty2Around, int empty1Position, int empty2Position) {
+        if (moveMode == KlotskiNodeUtil.RIGHT_ANGLE_TURN || moveMode == KlotskiNodeUtil.STRAIGHT) {
+            if (KlotskiNodeUtil.INT_TO_CHAR_BY_TYPE[empty1Around[0]] == KlotskiNodeUtil.H) {
+                move(parent, empty1Position - 2, empty1Position);
+            } else if (KlotskiNodeUtil.INT_TO_CHAR_BY_TYPE[empty2Around[1]] == KlotskiNodeUtil.H) {
+                move(parent, empty2Position + 1, empty1Position);
+            }
+            if (moveMode == KlotskiNodeUtil.RIGHT_ANGLE_TURN) {
+                soldierMoveByDoubleEmpty(parent, empty1Around, empty1Position, empty2Position);
+                soldierMoveByDoubleEmpty(parent, empty2Around, empty2Position, empty1Position);
+            } else {
+                if (KlotskiNodeUtil.INT_TO_CHAR_BY_TYPE[empty1Around[0]] == KlotskiNodeUtil.S) {
+                    move(parent, empty1Position - 1, empty2Position);
+                }
+                if (KlotskiNodeUtil.INT_TO_CHAR_BY_TYPE[empty2Around[1]] == KlotskiNodeUtil.S) {
+                    move(parent, empty2Position + 1, empty1Position);
+                }
+            }
+        }
+        if (empty1Around[2] != 0 && empty1Around[2] == empty2Around[2]) {
+            switch (KlotskiNodeUtil.INT_TO_CHAR_BY_TYPE[empty1Around[2]]) {
+                case KlotskiNodeUtil.H:
+                    move(parent, empty1Position - 4, empty1Position);
+                    break;
+                case KlotskiNodeUtil.T:
+                    move(parent, empty1Position - 8, empty1Position - 4);
+                    break;
+                default:
+            }
+        }
+        if (empty1Around[3] != 0 && empty1Around[3] == empty2Around[3]) {
+            move(parent, empty1Position + 4, empty1Position);
+        }
+    }
+
+    private void verticalDoubleEmpty(KlotskiNode parent, int[] empty1Around, int[] empty2Around, int empty1Position, int empty2Position) {
+        if (moveMode == KlotskiNodeUtil.RIGHT_ANGLE_TURN || moveMode == KlotskiNodeUtil.STRAIGHT) {
+            if (KlotskiNodeUtil.INT_TO_CHAR_BY_TYPE[empty1Around[2]] == KlotskiNodeUtil.V) {
+                move(parent, empty1Position - 8, empty1Position);
+            } else if (KlotskiNodeUtil.INT_TO_CHAR_BY_TYPE[empty2Around[3]] == KlotskiNodeUtil.V) {
+                move(parent, empty2Position + 4, empty1Position);
+            }
+            if (moveMode == KlotskiNodeUtil.RIGHT_ANGLE_TURN) {
+                soldierMoveByDoubleEmpty(parent, empty1Around, empty1Position, empty2Position);
+                soldierMoveByDoubleEmpty(parent, empty2Around, empty2Position, empty1Position);
+            } else {
+                if (KlotskiNodeUtil.INT_TO_CHAR_BY_TYPE[empty1Around[2]] == KlotskiNodeUtil.S) {
+                    move(parent, empty1Position - 4, empty2Position);
+                }
+                if (KlotskiNodeUtil.INT_TO_CHAR_BY_TYPE[empty2Around[3]] == KlotskiNodeUtil.S) {
+                    move(parent, empty2Position + 4, empty1Position);
+                }
+            }
+        }
+        if (empty1Around[0] != 0 && empty1Around[0] == empty2Around[0]) {
+            switch (KlotskiNodeUtil.INT_TO_CHAR_BY_TYPE[empty1Around[0]]) {
+                case KlotskiNodeUtil.V:
+                    move(parent, empty1Position - 1, empty1Position);
+                    break;
+                case KlotskiNodeUtil.T:
+                    move(parent, empty1Position - 2, empty1Position - 1);
+                    break;
+                default:
+            }
+        }
+        if (empty1Around[1] != 0 && empty1Around[1] == empty2Around[1]) {
+            move(parent, empty1Position + 1, empty1Position);
+        }
+    }
+
+    private void soldierMoveByDoubleEmpty(KlotskiNode parent, int[] emptyAround, int src, int dest) {
+        for (int i = 0; i < emptyAround.length; i++) {
+            if (KlotskiNodeUtil.INT_TO_CHAR_BY_TYPE[emptyAround[i]] == KlotskiNodeUtil.S) {
+                move(parent, src + DIRECTIONS_OFFSET[i], dest);
             }
         }
     }
 
     /**
      * 移动棋子
-     * @param parent 父节点
-     * @param src
-     * @param dest
+     * @param parent
+     * @param src 棋子位置（占多格棋子，左上角）
+     * @param dest 空格位置（联立空格，第一个空格）
      */
     private void move(KlotskiNode parent, int src, int dest) {
-        int[] childStatus = new int[rootStatus.length];
-        System.arraycopy(parent.getStatus(), 0, childStatus, 0, rootStatus.length);
-        int intType = parent.getStatus()[src];
-        char charType = KlotskiNodeUtil.TYPE[intType];
+        int[] status = new int[parent.getStatus().length];
+        System.arraycopy(parent.getStatus(), 0, status, 0, status.length);
+        int intType = status[src];
+        char charType = KlotskiNodeUtil.INT_TO_CHAR_BY_TYPE[intType];
         switch (charType) {
-            case KlotskiNodeUtil.T:
-                childStatus[src] = childStatus[src + 1] = childStatus[src + 4] = childStatus[src + 5] = 0;
-                childStatus[dest] = childStatus[dest + 1] = childStatus[dest + 4] = childStatus[dest + 5] = intType;
+            case KlotskiNodeUtil.S:
+                status[src] = 0;
+                status[dest] = intType;
                 break;
             case KlotskiNodeUtil.H:
-                childStatus[src] = childStatus[src + 1] = 0;
-                childStatus[dest] = childStatus[dest + 1] = intType;
+                status[src] = status[src + 1] = 0;
+                status[dest] = status[dest + 1] = intType;
                 break;
             case KlotskiNodeUtil.V:
-                childStatus[src] = childStatus[src + 4] = 0;
-                childStatus[dest] = childStatus[dest + 4] = intType;
+                status[src] = status[src + 4] = 0;
+                status[dest] = status[dest + 4] = intType;
                 break;
-            case KlotskiNodeUtil.S:
-                childStatus[src] = 0;
-                childStatus[dest] = intType;
+            case KlotskiNodeUtil.T:
+                status[src] = status[src + 1] = status[src + 4] = status[src + 5] = 0;
+                status[dest] = status[dest + 1] = status[dest + 4] = status[dest + 5] = intType;
                 break;
-        }
-        // 搜索完成
-        if (childStatus[17] == 15 && childStatus[18] == 15) {
-            int count = 0;
-            System.out.println(count++);
-            KlotskiNodeUtil.printStatus(childStatus);
-            while (parent != null) {
-                System.out.println(count++);
-                KlotskiNodeUtil.printStatus(parent.getStatus());
-                parent = parent.getParent();
-            }
-            System.out.format("队列数组长度%d 实际队列数组长度%d 队列数组利用率%f%%%n", queue.length, rear - head,
-                    ((float) (rear - head) / queue.length) * 100);
-            keep = false;
-            return;
-        }
-        int statusCode = klotskiStatusCode.statusCoding(childStatus);
-        if (generated[statusCode]) {
-            return;
-        }
-        int symmetryStatusCode = klotskiStatusCode.mirrorSymmetryStatusCoding(childStatus);
-        if (generated[symmetryStatusCode]) {
-            return;
+            default:
         }
         KlotskiNode child = new KlotskiNode();
-        child.setParent(parent);
-        child.setStatus(childStatus);
-        // 队列已满，扩容队列
-        if ((rear + 1 & queue.length - 1) == head) {
-            expansionQueue();
+        child.setStatus(status);
+        KlotskiNode klotskiNode = klotskiNodeHashMap.put(child);
+        if (klotskiNode == null) {
+            child.setParent(parent);
+            child.setSrc(src);
+            child.setDest(dest);
+            klotskiNodeQueue.offer(child);
         }
-        queue[rear++] = child;
-        rear &= queue.length - 1;
-        generated[statusCode] = true;
-        generated[symmetryStatusCode] = true;
-    }
-
-    /**
-     * 扩容队列
-     */
-    private void expansionQueue() {
-        KlotskiNode[] klotskiNodes = new KlotskiNode[queue.length << 1];
-        System.arraycopy(queue, 0, klotskiNodes, 0, rear);
-        System.arraycopy(queue, head, klotskiNodes, klotskiNodes.length - queue.length + head, queue.length - head);
-        head = klotskiNodes.length - queue.length + head;
-        queue = klotskiNodes;
     }
 
 }
