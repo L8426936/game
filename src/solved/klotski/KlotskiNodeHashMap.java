@@ -11,11 +11,9 @@ public class KlotskiNodeHashMap {
     }
 
     public KlotskiNode put(int key, KlotskiNode value) {
-        if (klotskiNodes[key] != null) {
-            return klotskiNodes[key];
-        }
+        KlotskiNode klotskiNode = klotskiNodes[key];
         klotskiNodes[key] = value;
-        return null;
+        return klotskiNode;
     }
 
     public KlotskiNode get(int key) {
