@@ -8,20 +8,25 @@ public class KlotskiNodeTree {
     private KlotskiNodeQueue klotskiNodeQueue = new KlotskiNodeQueue();
     private KlotskiNodeHashMap klotskiNodeHashMap;
     /**
+     * 盘面编码类
+     */
+    private KlotskiNodeStatusCode klotskiNodeStatusCode;
+    /**
      * 移动模式
      */
     private int moveMode;
-    private final static int[] DIRECTIONS_OFFSET = {-1, 1, -4, 4};
 
     public KlotskiNodeTree(int[] status, int moveMode) {
         this.moveMode = moveMode;
-        klotskiNodeHashMap = new KlotskiNodeHashMap(status);
+        klotskiNodeStatusCode = new KlotskiNodeStatusCode(status);
+        klotskiNodeHashMap = new KlotskiNodeHashMap(klotskiNodeStatusCode.getTotal());
 
         KlotskiNode root = new KlotskiNode();
         root.setStatus(status);
         klotskiNodeQueue.offer(root);
 
-        klotskiNodeHashMap.put(root);
+        klotskiNodeHashMap.put(klotskiNodeStatusCode.statusCoding(status), root);
+        klotskiNodeHashMap.put(klotskiNodeStatusCode.mirrorSymmetryStatusCoding(status), root);
     }
 
     public KlotskiNode[] BFS() {
@@ -209,6 +214,7 @@ public class KlotskiNodeTree {
         }
     }
 
+    private final static int[] DIRECTIONS_OFFSET = {-1, 1, -4, 4};
     private void soldierMoveByDoubleEmpty(KlotskiNode parent, int[] emptyAround, int src, int dest) {
         for (int i = 0; i < emptyAround.length; i++) {
             if (KlotskiNodeUtil.INT_TO_CHAR_BY_TYPE[emptyAround[i]] == KlotskiNodeUtil.S) {
@@ -247,15 +253,23 @@ public class KlotskiNodeTree {
                 break;
             default:
         }
-        KlotskiNode child = new KlotskiNode();
-        child.setStatus(status);
-        KlotskiNode klotskiNode = klotskiNodeHashMap.put(child);
-        if (klotskiNode == null) {
-            child.setParent(parent);
-            child.setSrc(src);
-            child.setDest(dest);
-            klotskiNodeQueue.offer(child);
+        int statusCode = klotskiNodeStatusCode.statusCoding(status);
+        if (klotskiNodeHashMap.get(statusCode) == null) {
+            int mirrorSymmetryStatusCode = klotskiNodeStatusCode.mirrorSymmetryStatusCoding(status);
+            if (klotskiNodeHashMap.get(mirrorSymmetryStatusCode) == null) {
+                KlotskiNode child = new KlotskiNode();
+                child.setStatus(status);
+                child.setParent(parent);
+                child.setSrc(src);
+                child.setDest(dest);
+                klotskiNodeHashMap.put(statusCode, child);
+                klotskiNodeHashMap.put(mirrorSymmetryStatusCode, child);
+                klotskiNodeQueue.offer(child);
+            }
         }
     }
 
+    public int statusCoding(int[] status) {
+        return klotskiNodeStatusCode.statusCoding(status);
+    }
 }

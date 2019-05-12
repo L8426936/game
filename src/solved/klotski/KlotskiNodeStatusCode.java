@@ -41,8 +41,8 @@ public class KlotskiNodeStatusCode {
             }
         }
         // 横将、竖将排列数量
-        int horizontalTotal = SEQUENCE[KlotskiNodeUtil.maxValue(horizontalCount >> 1)] + 1,
-                verticalTotal = SEQUENCE[KlotskiNodeUtil.maxValue(verticalCount >> 1)] + 1;
+        int horizontalTotal = SEQUENCE[maxValue(horizontalCount >> 1)] + 1,
+                verticalTotal = SEQUENCE[maxValue(verticalCount >> 1)] + 1;
         horizontalWeight = new int[horizontalTotal];
         verticalWeight = new int[verticalTotal];
 
@@ -144,5 +144,18 @@ public class KlotskiNodeStatusCode {
 
     public int getTotal() {
         return total;
+    }
+
+    /**
+     * 最大值
+     * @param n 1的个数
+     * @return
+     */
+    public static int maxValue(int n) {
+        int value = 0;
+        while (n-- > 0) {
+            value += KlotskiNodeUtil.BINARY[11 - n];
+        }
+        return value;
     }
 }
