@@ -16,7 +16,7 @@
 > 墨盘，双向广度优先搜索，以下10关解法均比官方提示步数快一步
 
 | 关卡 | 关卡 | 关卡 | 关卡 | 关卡 |
-|-----|-----|-----|-----|-----|
+|:----:|:----:|:----:|:----:|:----:|
 | VII-3 | VII-6 | VII-7 | X-5 | XI-11 |
 | ![VII-3](src/solved/data/evlover/VII-3.gif) | ![VII-6](src/solved/data/evlover/VII-6.gif) | ![VII-7](src/solved/data/evlover/VII-7.gif) | ![X-5](src/solved/data/evlover/X-5.gif) | ![XI-11](src/solved/data/evlover/XI-11.gif) |
 | XIII-8 | XIV-6 | XIV-9 | XV-2 | XVI-2 |
