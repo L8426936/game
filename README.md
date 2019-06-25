@@ -17,7 +17,5 @@
 
 | 关卡 | 关卡 | 关卡 | 关卡 | 关卡 |
 |-----|-----|-----|-----|-----|
-| VII-3 | VII-6 | VII-7 | X-5 | XI-11 |
-| ![VII-3](https://github.com/L8426936/game/tree/master/src/solved/data/evlover/VII-3.gif) | ![VII-6](https://github.com/L8426936/game/tree/master/src/solved/data/evlover/VII-6.gif) | ![VII-7](https://github.com/L8426936/game/tree/master/src/solved/data/evlover/VII-7.gif) | ![X-5](https://github.com/L8426936/game/tree/master/src/solved/data/evlover/X-5.gif) | ![XI-11](https://github.com/L8426936/game/tree/master/src/solved/data/evlover/XI-11.gif) |
-| XIII-8 | XIV-6 | XIV-9 | XV-2 | XVI-2 |
-| ![XIII-8](https://github.com/L8426936/game/tree/master/src/solved/data/evlover/XIII-8.gif) | ![XIV-6](https://github.com/L8426936/game/tree/master/src/solved/data/evlover/XIV-6.gif) | ![XIV-9](https://github.com/L8426936/game/tree/master/src/solved/data/evlover/XIV-9.gif) | ![XV-2](https://github.com/L8426936/game/tree/master/src/solved/data/evlover/XV-2.gif) | ![XVI-2](https://github.com/L8426936/game/tree/master/src/solved/data/evlover/XVI-2.gif) |
+| [VII-3](https://github.com/L8426936/game/tree/master/src/solved/data/evlover/VII-3.gif) | [VII-6](https://github.com/L8426936/game/tree/master/src/solved/data/evlover/VII-6.gif) | [VII-7](https://github.com/L8426936/game/tree/master/src/solved/data/evlover/VII-7.gif) | [X-5](https://github.com/L8426936/game/tree/master/src/solved/data/evlover/X-5.gif) | [XI-11](https://github.com/L8426936/game/tree/master/src/solved/data/evlover/XI-11.gif) |
+| [XIII-8](https://github.com/L8426936/game/tree/master/src/solved/data/evlover/XIII-8.gif) | [XIV-6](https://github.com/L8426936/game/tree/master/src/solved/data/evlover/XIV-6.gif) | [XIV-9](https://github.com/L8426936/game/tree/master/src/solved/data/evlover/XIV-9.gif) | [XV-2](https://github.com/L8426936/game/tree/master/src/solved/data/evlover/XV-2.gif) | [XVI-2](https://github.com/L8426936/game/tree/master/src/solved/data/evlover/XVI-2.gif) |
