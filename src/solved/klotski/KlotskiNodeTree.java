@@ -26,7 +26,7 @@ public class KlotskiNodeTree {
         klotskiNodeQueue.offer(root);
 
         klotskiNodeHashMap.put(klotskiNodeStatusCode.statusCoding(status), root);
-        klotskiNodeHashMap.put(klotskiNodeStatusCode.mirrorSymmetryStatusCoding(status), root);
+        klotskiNodeHashMap.put(klotskiNodeStatusCode.mirrorSymmetricStatusCoding(status), root);
     }
 
     public KlotskiNode[] BFS() {
@@ -255,7 +255,7 @@ public class KlotskiNodeTree {
         }
         int statusCode = klotskiNodeStatusCode.statusCoding(status);
         if (klotskiNodeHashMap.get(statusCode) == null) {
-            int mirrorSymmetryStatusCode = klotskiNodeStatusCode.mirrorSymmetryStatusCoding(status);
+            int mirrorSymmetryStatusCode = klotskiNodeStatusCode.mirrorSymmetricStatusCoding(status);
             if (klotskiNodeHashMap.get(mirrorSymmetryStatusCode) == null) {
                 KlotskiNode child = new KlotskiNode();
                 child.setStatus(status);

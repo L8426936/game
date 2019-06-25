@@ -131,7 +131,7 @@ public class KlotskiNodeStatusCode {
      * @param status 盘面
      * @return
      */
-    public int mirrorSymmetryStatusCoding(int[] status) {
+    public int mirrorSymmetricStatusCoding(int[] status) {
         int[] mirrorSymmetryStatus = new int[status.length];
         for (int i = 0; i < status.length; i += 4) {
             mirrorSymmetryStatus[i] = status[i + 3];
