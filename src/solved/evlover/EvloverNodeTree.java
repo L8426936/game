@@ -69,8 +69,8 @@ public class EvloverNodeTree {
     /**
      * <p>优先点对称交换</p>
      * <p>C: 点对称交换</p>
-     * <p>L: 顺时针旋转</p>
-     * <p>R: 逆时针旋转</p>
+     * <p>L: 顺时针旋转旋转</p>
+     * <p>R: 逆时针旋转旋转</p>
      */
     private final static char[] ACTIONS = {'C', 'L', 'R'};
     /**
@@ -110,7 +110,6 @@ public class EvloverNodeTree {
                         int y = clickPointY[j];
                         int z = clickPointZ[j];
                         long childStatus = nextStep(parent.getStatus(), x, y, z, ACTIONS[i]);
-                        
 						if (childStatus != parent.getStatus() && insertAVLTree.search(childStatus) == null) {
 							boolean add = true;
 							for (int symmetricType = 0; symmetricType < 7; symmetricType++) {
@@ -137,7 +136,6 @@ public class EvloverNodeTree {
 								}
 							}
 						}
-						
                     }
                 }
                 // 点击次数：((layer - 1) * 2 + 1)^3；上面方式的点击次数：3 * layer * (layer - 1) + 1
