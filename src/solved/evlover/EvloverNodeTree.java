@@ -111,30 +111,20 @@ public class EvloverNodeTree {
                         int z = clickPointZ[j];
                         long childStatus = nextStep(parent.getStatus(), x, y, z, ACTIONS[i]);
 						if (childStatus != parent.getStatus() && insertAVLTree.search(childStatus) == null) {
-							boolean add = true;
-							for (int symmetricType = 0; symmetricType < 7; symmetricType++) {
-								long symmetricStatus = evloverNodeUtil.symmetricStatus(childStatus, symmetricType);
-								if (symmetricStatus != childStatus && symmetricStatus != parent.getStatus() && insertAVLTree.search(symmetricStatus) == parent) {
-									add = false;
-									break;
-								}
-							}
-							if (add) {
-								EvloverNode child = new EvloverNode();
-								child.setParent(parent);
-								child.setStatus(childStatus);
-								child.setX(x);
-								child.setY(y);
-								child.setZ(z);
-								child.setAction(ACTIONS[i]);
-								insertAVLTree.put(childStatus, child);
-								nextLayer.offer(child);
-								EvloverNode[] evloverNodes = searchPassPath(child, checkAVLTree);
-								if (evloverNodes != null) {
-                                    System.out.format("开始队列长度%d 结束队列长度%d 开始树节点%d 结束树节点%d%n", startQueue.size(), endQueue.size(), startAVLTree.size(), endAVLTree.size());
-                                    return evloverNodes;
-								}
-							}
+                            EvloverNode child = new EvloverNode();
+                            child.setParent(parent);
+                            child.setStatus(childStatus);
+                            child.setX(x);
+                            child.setY(y);
+                            child.setZ(z);
+                            child.setAction(ACTIONS[i]);
+                            insertAVLTree.put(childStatus, child);
+                            nextLayer.offer(child);
+                            EvloverNode[] evloverNodes = searchPassPath(child, checkAVLTree);
+                            if (evloverNodes != null) {
+                                System.out.format("开始队列长度%d 结束队列长度%d 开始树节点%d 结束树节点%d%n", startQueue.size(), endQueue.size(), startAVLTree.size(), endAVLTree.size());
+                                return evloverNodes;
+                            }
 						}
                     }
                 }
