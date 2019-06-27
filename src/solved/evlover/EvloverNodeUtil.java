@@ -1,5 +1,7 @@
 package solved.evlover;
 
+import java.util.Arrays;
+
 public class EvloverNodeUtil {
     private int layer;
     private int[] rowPreviousSum, indexToX, indexToY, indexToZ;
@@ -150,6 +152,402 @@ public class EvloverNodeUtil {
     public int index(int x, int y, int z) {
         int col = z <= 0 ? layer - y : layer + x;
         return rowPreviousSum[layer + z] + col;
+    }
+
+    /**
+     * <p>返回对称状态</p>
+     * <p>原点对称: 0</p>
+     * <p>X轴对称: 1</p>
+     * <p>Y轴对称: 2</p>
+     * <p>Z轴对称: 3</p>
+     * <p>垂直于X轴对称: 4</p>
+     * <p>垂直于Y轴对称: 5</p>
+     * <p>垂直于Z轴对称: 6</p>
+     * @param status
+     * @param symmetricType
+     * @return
+     */
+    public long symmetricStatus(long status, int symmetricType) {
+        switch (symmetricType) {
+            case 0:
+                return originSymmetricStatus(status);
+            case 1:
+                return xAxiSymmetricStatus(status);
+            case 2:
+                return yAxiSymmetricStatus(status);
+            case 3:
+                return zAxiSymmetricStatus(status);
+            case 4:
+                return perpendicularToXAxiSymmetricStatus(status);
+            case 5:
+                return perpendicularToYAxiSymmetricStatus(status);
+            case 6:
+                return perpendicularToZAxiSymmetricStatus(status);
+            default:
+        }
+        return status;
+    }
+
+    /**
+     * 原点对称状态
+     * @param status
+     * @return
+     */
+    public long originSymmetricStatus(long status) {
+        long symmetricStatus = 0;
+        for (int index = 0; status > 0; index++) {
+            // 当前点和对称点有值
+            if ((status & BINARY_VALUE[index]) > 0) {
+                // 去除已检查点
+                status ^= BINARY_VALUE[index];
+                int symmetricX = -indexToX[index];
+                int symmetricY = -indexToY[index];
+                int symmetricZ = -indexToZ[index];
+                int symmetricIndex = index(symmetricX, symmetricY, symmetricZ);
+                symmetricStatus ^= BINARY_VALUE[symmetricIndex];
+            }
+        }
+        return symmetricStatus;
+    }
+
+    /**
+     * X轴对称状态
+     * @param status
+     * @return
+     */
+    public long xAxiSymmetricStatus(long status) {
+        long symmetricStatus = 0;
+        for (int index = 0; status > 0; index++) {
+            // 当前点和对称点有值
+            if ((status & BINARY_VALUE[index]) > 0) {
+                // 去除已检查点
+                status ^= BINARY_VALUE[index];
+                int symmetricX = -indexToX[index];
+                int symmetricY = -indexToZ[index];
+                int symmetricZ = -indexToY[index];
+                int symmetricIndex = index(symmetricX, symmetricY, symmetricZ);
+                symmetricStatus ^= BINARY_VALUE[symmetricIndex];
+            }
+        }
+        return symmetricStatus;
+    }
+
+    /**
+     * Y轴对称状态
+     * @param status
+     * @return
+     */
+    public long yAxiSymmetricStatus(long status) {
+        long symmetricStatus = 0;
+        for (int index = 0; status > 0; index++) {
+            // 当前点和对称点有值
+            if ((status & BINARY_VALUE[index]) > 0) {
+                // 去除已检查点
+                status ^= BINARY_VALUE[index];
+                int symmetricX = -indexToZ[index];
+                int symmetricY = -indexToY[index];
+                int symmetricZ = -indexToX[index];
+                int symmetricIndex = index(symmetricX, symmetricY, symmetricZ);
+                symmetricStatus ^= BINARY_VALUE[symmetricIndex];
+            }
+        }
+        return symmetricStatus;
+    }
+
+    /**
+     * Z轴对称状态
+     * @param status
+     * @return
+     */
+    public long zAxiSymmetricStatus(long status) {
+        long symmetricStatus = 0;
+        for (int index = 0; status > 0; index++) {
+            // 当前点和对称点有值
+            if ((status & BINARY_VALUE[index]) > 0) {
+                // 去除已检查点
+                status ^= BINARY_VALUE[index];
+                int symmetricX = -indexToY[index];
+                int symmetricY = -indexToX[index];
+                int symmetricZ = -indexToZ[index];
+                int symmetricIndex = index(symmetricX, symmetricY, symmetricZ);
+                symmetricStatus ^= BINARY_VALUE[symmetricIndex];
+            }
+        }
+        return symmetricStatus;
+    }
+
+    /**
+     * 垂直于X轴对称状态
+     * @param status
+     * @return
+     */
+    public long perpendicularToXAxiSymmetricStatus(long status) {
+        long symmetricStatus = 0;
+        for (int index = 0; status > 0; index++) {
+            // 当前点和对称点有值
+            if ((status & BINARY_VALUE[index]) > 0) {
+                // 去除已检查点
+                status ^= BINARY_VALUE[index];
+                int symmetricX = indexToX[index];
+                int symmetricY = indexToZ[index];
+                int symmetricZ = indexToY[index];
+                int symmetricIndex = index(symmetricX, symmetricY, symmetricZ);
+                symmetricStatus ^= BINARY_VALUE[symmetricIndex];
+            }
+        }
+        return symmetricStatus;
+    }
+
+    /**
+     * 垂直于Y轴对称状态
+     * @param status
+     * @return
+     */
+    public long perpendicularToYAxiSymmetricStatus(long status) {
+        long symmetricStatus = 0;
+        for (int index = 0; status > 0; index++) {
+            // 当前点和对称点有值
+            if ((status & BINARY_VALUE[index]) > 0) {
+                // 去除已检查点
+                status ^= BINARY_VALUE[index];
+                int symmetricX = indexToZ[index];
+                int symmetricY = indexToY[index];
+                int symmetricZ = indexToX[index];
+                int symmetricIndex = index(symmetricX, symmetricY, symmetricZ);
+                symmetricStatus ^= BINARY_VALUE[symmetricIndex];
+            }
+        }
+        return symmetricStatus;
+    }
+
+    /**
+     * 垂直于Z轴对称状态
+     * @param status
+     * @return
+     */
+    public long perpendicularToZAxiSymmetricStatus(long status) {
+        long symmetricStatus = 0;
+        for (int index = 0; status > 0; index++) {
+            // 当前点和对称点有值
+            if ((status & BINARY_VALUE[index]) > 0) {
+                // 去除已检查点
+                status ^= BINARY_VALUE[index];
+                int symmetricX = indexToY[index];
+                int symmetricY = indexToX[index];
+                int symmetricZ = indexToZ[index];
+                int symmetricIndex = index(symmetricX, symmetricY, symmetricZ);
+                symmetricStatus ^= BINARY_VALUE[symmetricIndex];
+            }
+        }
+        return symmetricStatus;
+    }
+
+    /**
+     * <p>返回两个形状的共同对称</p>
+     * <p>原点对称: 0</p>
+     * <p>X轴对称: 1</p>
+     * <p>Y轴对称: 2</p>
+     * <p>Z轴对称: 3</p>
+     * <p>垂直于X轴对称: 4</p>
+     * <p>垂直于Y轴对称: 5</p>
+     * <p>垂直于Z轴对称: 6</p>
+     * @param startStatus
+     * @param endStatus
+     * @return
+     */
+    public int[] symmetric(long startStatus, long endStatus) {
+        int[] symmetric = new int[7];
+        int index = 0;
+        if (isOriginSymmetric(startStatus) && isOriginSymmetric(endStatus)) {
+            symmetric[index++] = 0;
+        }
+        if (isXAxiSymmetric(startStatus) && isXAxiSymmetric(endStatus)) {
+            symmetric[index++] = 1;
+        }
+        if (isYAxiSymmetric(startStatus) && isYAxiSymmetric(endStatus)) {
+            symmetric[index++] = 2;
+        }
+        if (isZAxiSymmetric(startStatus) && isZAxiSymmetric(endStatus)) {
+            symmetric[index++] = 3;
+        }
+        if (isPerpendicularToXAxiSymmetric(startStatus) && isPerpendicularToXAxiSymmetric(endStatus)) {
+            symmetric[index++] = 4;
+        }
+        if (isPerpendicularToYAxiSymmetric(startStatus) && isPerpendicularToYAxiSymmetric(endStatus)) {
+            symmetric[index++] = 5;
+        }
+        if (isPerpendicularToZAxiSymmetric(startStatus) && isPerpendicularToZAxiSymmetric(endStatus)) {
+            symmetric[index++] = 6;
+        }
+        return Arrays.copyOf(symmetric, index);
+    }
+
+    /**
+     * 原点对称
+     * @param status
+     * @return
+     */
+    public boolean isOriginSymmetric(long status) {
+        for (int index = 0; status > 0; index++) {
+            // 当前点有值
+            if ((status & BINARY_VALUE[index]) > 0) {
+                int symmetricX = -indexToX[index];
+                int symmetricY = -indexToY[index];
+                int symmetricZ = -indexToZ[index];
+                int symmetricIndex = index(symmetricX, symmetricY, symmetricZ);
+                if ((status & BINARY_VALUE[symmetricIndex]) > 0) {
+                    // 对称点有值，移除检查的点
+                    status ^= BINARY_VALUE[index] | BINARY_VALUE[symmetricIndex];
+                } else {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * X轴对称
+     * @param status
+     * @return
+     */
+    public boolean isXAxiSymmetric(long status) {
+        for (int index = 0; status > 0; index++) {
+            // 当前点有值
+            if ((status & BINARY_VALUE[index]) > 0) {
+                int symmetricX = -indexToX[index];
+                int symmetricY = -indexToZ[index];
+                int symmetricZ = -indexToY[index];
+                int symmetricIndex = index(symmetricX, symmetricY, symmetricZ);
+                if ((status & BINARY_VALUE[symmetricIndex]) > 0) {
+                    // 对称点有值，移除检查的点
+                    status ^= BINARY_VALUE[index] | BINARY_VALUE[symmetricIndex];
+                } else {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Y轴对称
+     * @param status
+     * @return
+     */
+    public boolean isYAxiSymmetric(long status) {
+        for (int index = 0; status > 0; index++) {
+            // 当前点有值
+            if ((status & BINARY_VALUE[index]) > 0) {
+                int symmetricX = -indexToZ[index];
+                int symmetricY = -indexToY[index];
+                int symmetricZ = -indexToX[index];
+                int symmetricIndex = index(symmetricX, symmetricY, symmetricZ);
+                if ((status & BINARY_VALUE[symmetricIndex]) > 0) {
+                    // 对称点有值，移除检查的点
+                    status ^= BINARY_VALUE[index] | BINARY_VALUE[symmetricIndex];
+                } else {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Z轴对称
+     * @param status
+     * @return
+     */
+    public boolean isZAxiSymmetric(long status) {
+        for (int index = 0; status > 0; index++) {
+            // 当前点有值
+            if ((status & BINARY_VALUE[index]) > 0) {
+                int symmetricX = -indexToY[index];
+                int symmetricY = -indexToX[index];
+                int symmetricZ = -indexToZ[index];
+                int symmetricIndex = index(symmetricX, symmetricY, symmetricZ);
+                if ((status & BINARY_VALUE[symmetricIndex]) > 0) {
+                    // 对称点有值，移除检查的点
+                    status ^= BINARY_VALUE[index] | BINARY_VALUE[symmetricIndex];
+                } else {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 垂直于X轴对称
+     * @param status
+     * @return
+     */
+    public boolean isPerpendicularToXAxiSymmetric(long status) {
+        for (int index = 0; status > 0; index++) {
+            // 当前点有值
+            if ((status & BINARY_VALUE[index]) > 0) {
+                int symmetricX = indexToX[index];
+                int symmetricY = indexToZ[index];
+                int symmetricZ = indexToY[index];
+                int symmetricIndex = index(symmetricX, symmetricY, symmetricZ);
+                if ((status & BINARY_VALUE[symmetricIndex]) > 0) {
+                    // 对称点有值，移除检查的点
+                    status ^= BINARY_VALUE[index] | BINARY_VALUE[symmetricIndex];
+                } else {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 垂直于Y轴对称
+     * @param status
+     * @return
+     */
+    public boolean isPerpendicularToYAxiSymmetric(long status) {
+        for (int index = 0; status > 0; index++) {
+            // 当前点有值
+            if ((status & BINARY_VALUE[index]) > 0) {
+                int symmetricX = indexToZ[index];
+                int symmetricY = indexToY[index];
+                int symmetricZ = indexToX[index];
+                int symmetricIndex = index(symmetricX, symmetricY, symmetricZ);
+                if ((status & BINARY_VALUE[symmetricIndex]) > 0) {
+                    // 对称点有值，移除检查的点
+                    status ^= BINARY_VALUE[index] | BINARY_VALUE[symmetricIndex];
+                } else {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 垂直于Z轴对称
+     * @param status
+     * @return
+     */
+    public boolean isPerpendicularToZAxiSymmetric(long status) {
+        for (int index = 0; status > 0; index++) {
+            // 当前点有值
+            if ((status & BINARY_VALUE[index]) > 0) {
+                int symmetricX = indexToY[index];
+                int symmetricY = indexToX[index];
+                int symmetricZ = indexToZ[index];
+                int symmetricIndex = index(symmetricX, symmetricY, symmetricZ);
+                if ((status & BINARY_VALUE[symmetricIndex]) > 0) {
+                    // 对称点有值，移除检查的点
+                    status ^= BINARY_VALUE[index] | BINARY_VALUE[symmetricIndex];
+                } else {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
 }

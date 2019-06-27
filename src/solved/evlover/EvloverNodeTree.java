@@ -8,7 +8,7 @@ public class EvloverNodeTree {
 
     private EvloverNodeUtil evloverNodeUtil;
 
-    private int[] clickPointX, clickPointY, clickPointZ;
+    private int[] clickPointX, clickPointY, clickPointZ, commonSymmetric;
 
     private LinkedList<EvloverNode> startQueue = new LinkedList<>();
     private LinkedList<EvloverNode> endQueue = new LinkedList<>();
@@ -52,6 +52,7 @@ public class EvloverNodeTree {
             initClickPoint();
 
             evloverNodeUtil = new EvloverNodeUtil(layer);
+            commonSymmetric = evloverNodeUtil.symmetric(startEvloverStatus, endEvloverStatus);
 
             EvloverNode startEvloverNode = new EvloverNode();
             startEvloverNode.setStatus(startEvloverStatus);
@@ -111,6 +112,15 @@ public class EvloverNodeTree {
                         int z = clickPointZ[j];
                         long childStatus = nextStep(parent.getStatus(), x, y, z, ACTIONS[i]);
 						if (childStatus != parent.getStatus() && insertAVLTree.search(childStatus) == null) {
+                            boolean add = true;
+                            for (int symmetricIndex = 0; symmetricIndex < commonSymmetric.length; symmetricIndex++) {
+                                long symmetricStatus = evloverNodeUtil.symmetricStatus(childStatus, commonSymmetric[symmetricIndex]);
+                                if (symmetricStatus != childStatus && symmetricStatus != parent.getStatus()
+                                        && insertAVLTree.search(symmetricStatus) != null) {
+                                    add = false;
+                                    break;
+                                }
+                            }
                             EvloverNode child = new EvloverNode();
                             child.setParent(parent);
                             child.setStatus(childStatus);
@@ -119,16 +129,18 @@ public class EvloverNodeTree {
                             child.setZ(z);
                             child.setAction(ACTIONS[i]);
                             insertAVLTree.put(childStatus, child);
-                            nextLayer.offer(child);
-                            EvloverNode[] evloverNodes = searchPassPath(child, checkAVLTree);
-                            if (evloverNodes != null) {
-                                System.out.format("开始队列长度%d 结束队列长度%d 开始树节点%d 结束树节点%d%n", startQueue.size(), endQueue.size(), startAVLTree.size(), endAVLTree.size());
-                                return evloverNodes;
+                            if (add) {
+                                nextLayer.offer(child);
+                                EvloverNode[] evloverNodes = searchPassPath(child, checkAVLTree);
+                                if (evloverNodes != null) {
+                                    System.out.format("开始队列长度%d 结束队列长度%d 开始树节点%d 结束树节点%d%n", startQueue.size(), endQueue.size(), startAVLTree.size(), endAVLTree.size());
+                                    return evloverNodes;
+                                }
                             }
 						}
                     }
                 }
-                // 点击次数：((layer - 1) * 2 + 1)^3；上面方式的点击次数：3 * layer * (layer - 1) + 1
+                // 点击次数：(layer * 2 - 1) ^ 3；上面方式的点击次数：3 * layer * (layer - 1) + 1
                 // for (int i = 0; i < ACTIONS.length; i++) {
                 //     for (int x = -(this.layer - 1); x < this.layer; x++) {
                 //         for (int y = -(this.layer - 1); y < this.layer; y++) {
