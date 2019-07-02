@@ -4,11 +4,11 @@ import solved.util.AVLTree;
 import solved.util.LinkedList;
 
 public class EvloverNodeTree {
-    private int layer;
+    private int layer, commonSymmetric;
 
     private EvloverNodeUtil evloverNodeUtil;
 
-    private int[] clickPointX, clickPointY, clickPointZ, commonSymmetric;
+    private int[] clickPointX, clickPointY, clickPointZ;
 
     private LinkedList<EvloverNode> startQueue = new LinkedList<>();
     private LinkedList<EvloverNode> endQueue = new LinkedList<>();
@@ -97,15 +97,15 @@ public class EvloverNodeTree {
 				ACTIONS[2] = 'L';
             }
             LinkedList<EvloverNode> nextLayer = new LinkedList<>();
+            int startIndex = 0, flag = clickPointX.length, offset = 1;
+            if (queue == endQueue) {
+                startIndex = clickPointX.length - 1;
+                flag = -1;
+                offset = -1;
+            }
             while (!queue.isEmpty()) {
                 EvloverNode parent = queue.poll();
                 for (int i = 0; i < ACTIONS.length; i++) {
-					int startIndex = 0, flag = clickPointX.length, offset = 1;
-					if (queue == endQueue) {
-						startIndex = clickPointX.length - 1;
-						flag = -1;
-						offset = -1;
-					}
                     for (int j = startIndex; j != flag; j += offset) {
                         int x = clickPointX[j];
                         int y = clickPointY[j];
@@ -113,8 +113,8 @@ public class EvloverNodeTree {
                         long childStatus = nextStep(parent.getStatus(), x, y, z, ACTIONS[i]);
 						if (childStatus != parent.getStatus() && insertAVLTree.search(childStatus) == null) {
                             boolean add = true;
-                            for (int symmetricIndex = 0; symmetricIndex < commonSymmetric.length; symmetricIndex++) {
-                                long symmetricStatus = evloverNodeUtil.symmetricStatus(childStatus, commonSymmetric[symmetricIndex]);
+                            for (int symmetric = commonSymmetric; symmetric > 0; symmetric >>= 3) {
+                                long symmetricStatus = evloverNodeUtil.symmetricStatus(childStatus, symmetric & 7);
                                 if (symmetricStatus != childStatus && symmetricStatus != parent.getStatus()
                                         && insertAVLTree.search(symmetricStatus) != null) {
                                     add = false;

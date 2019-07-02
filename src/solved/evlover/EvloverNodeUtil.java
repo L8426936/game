@@ -1,6 +1,7 @@
 package solved.evlover;
 
 import java.util.Arrays;
+import java.util.Random;
 
 public class EvloverNodeUtil {
     private int layer;
@@ -143,6 +144,30 @@ public class EvloverNodeUtil {
     }
 
     /**
+     * 随机返回一个状态
+     * @param layer
+     * @param count 点的数量
+     * @return count > 3 * layer * (layer + 1) + 1, return null
+     */
+    public static int[] randomStatus(int layer, int count) {
+        if (count > 3 * layer * (layer + 1) + 1) {
+            return null;
+        }
+        int[] status = new int[3 * layer * (layer + 1) + 1];
+        while (count-- > 0) {
+            status[count] = 1;
+        }
+        Random random = new Random();
+        for (int i = status.length - 1; i > 0; i--) {
+            int j = random.nextInt(i + 1);
+            int value = status[j];
+            status[j] = status[i];
+            status[i] = value;
+        }
+        return status;
+    }
+
+    /**
      * x, y, z对应的一维数组索引
      * @param x
      * @param y
@@ -156,32 +181,32 @@ public class EvloverNodeUtil {
 
     /**
      * <p>返回对称状态</p>
-     * <p>原点对称: 0</p>
-     * <p>X轴对称: 1</p>
-     * <p>Y轴对称: 2</p>
-     * <p>Z轴对称: 3</p>
-     * <p>垂直于X轴对称: 4</p>
-     * <p>垂直于Y轴对称: 5</p>
-     * <p>垂直于Z轴对称: 6</p>
+     * <p>原点对称: 1</p>
+     * <p>X轴对称: 2</p>
+     * <p>Y轴对称: 3</p>
+     * <p>Z轴对称: 4</p>
+     * <p>垂直于X轴对称: 5</p>
+     * <p>垂直于Y轴对称: 6</p>
+     * <p>垂直于Z轴对称: 7</p>
      * @param status
      * @param symmetricType
      * @return
      */
     public long symmetricStatus(long status, int symmetricType) {
         switch (symmetricType) {
-            case 0:
-                return originSymmetricStatus(status);
             case 1:
-                return xAxiSymmetricStatus(status);
+                return originSymmetricStatus(status);
             case 2:
-                return yAxiSymmetricStatus(status);
+                return xAxiSymmetricStatus(status);
             case 3:
-                return zAxiSymmetricStatus(status);
+                return yAxiSymmetricStatus(status);
             case 4:
-                return perpendicularToXAxiSymmetricStatus(status);
+                return zAxiSymmetricStatus(status);
             case 5:
-                return perpendicularToYAxiSymmetricStatus(status);
+                return perpendicularToXAxiSymmetricStatus(status);
             case 6:
+                return perpendicularToYAxiSymmetricStatus(status);
+            case 7:
                 return perpendicularToZAxiSymmetricStatus(status);
             default:
         }
@@ -343,43 +368,42 @@ public class EvloverNodeUtil {
     }
 
     /**
-     * <p>返回两个形状的共同对称</p>
-     * <p>原点对称: 0</p>
-     * <p>X轴对称: 1</p>
-     * <p>Y轴对称: 2</p>
-     * <p>Z轴对称: 3</p>
-     * <p>垂直于X轴对称: 4</p>
-     * <p>垂直于Y轴对称: 5</p>
-     * <p>垂直于Z轴对称: 6</p>
+     * <p>返回两个形状的共同对称，每三位二进制保存</p>
+     * <p>原点对称: 1</p>
+     * <p>X轴对称: 2</p>
+     * <p>Y轴对称: 3</p>
+     * <p>Z轴对称: 4</p>
+     * <p>垂直于X轴对称: 5</p>
+     * <p>垂直于Y轴对称: 6</p>
+     * <p>垂直于Z轴对称: 7</p>
      * @param startStatus
      * @param endStatus
      * @return
      */
-    public int[] symmetric(long startStatus, long endStatus) {
-        int[] symmetric = new int[7];
-        int index = 0;
+    public int symmetric(long startStatus, long endStatus) {
+        int symmetric = 0;
         if (isOriginSymmetric(startStatus) && isOriginSymmetric(endStatus)) {
-            symmetric[index++] = 0;
+            symmetric = 1;
         }
         if (isXAxiSymmetric(startStatus) && isXAxiSymmetric(endStatus)) {
-            symmetric[index++] = 1;
+            symmetric = (symmetric << 3) | 2;
         }
         if (isYAxiSymmetric(startStatus) && isYAxiSymmetric(endStatus)) {
-            symmetric[index++] = 2;
+            symmetric = (symmetric << 3) | 3;
         }
         if (isZAxiSymmetric(startStatus) && isZAxiSymmetric(endStatus)) {
-            symmetric[index++] = 3;
+            symmetric = (symmetric << 3) | 4;
         }
         if (isPerpendicularToXAxiSymmetric(startStatus) && isPerpendicularToXAxiSymmetric(endStatus)) {
-            symmetric[index++] = 4;
+            symmetric = (symmetric << 3) | 5;
         }
         if (isPerpendicularToYAxiSymmetric(startStatus) && isPerpendicularToYAxiSymmetric(endStatus)) {
-            symmetric[index++] = 5;
+            symmetric = (symmetric << 3) | 6;
         }
         if (isPerpendicularToZAxiSymmetric(startStatus) && isPerpendicularToZAxiSymmetric(endStatus)) {
-            symmetric[index++] = 6;
+            symmetric = (symmetric << 3) | 7;
         }
-        return Arrays.copyOf(symmetric, index);
+        return symmetric;
     }
 
     /**
