@@ -1,17 +1,17 @@
 package solved.the_same_world;
 
-public class MostLinkLinkNode {
+public class TheSameWorldNode {
 
-	private MostLinkLinkNode parent; // 父节点
+	private TheSameWorldNode parent; // 父节点
 	private long value; // 当前路径值
 	private int row; // 当前节点的行
 	private int col; // 当前节点的列
 	private int index; // 起点序号
 	
-	public MostLinkLinkNode getParent() {
+	public TheSameWorldNode getParent() {
 		return parent;
 	}
-	public void setParent(MostLinkLinkNode parent) {
+	public void setParent(TheSameWorldNode parent) {
 		this.parent = parent;
 	}
 	public long getValue() {

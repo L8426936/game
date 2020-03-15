@@ -97,7 +97,7 @@ public class AVLTree<V> {
         return true;
     }
 
-    public V search(long key) {
+    public V get(long key) {
         Node<V> node = root;
         while (node != null) {
             long oldKey = node.getKey();

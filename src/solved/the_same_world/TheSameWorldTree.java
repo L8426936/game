@@ -7,17 +7,17 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class MostLinkLinkNodeTree {
+public class TheSameWorldTree {
 
 	private int[][] status; // 盘面
 	private long target; // 目标状态值
-	private MostLinkLinkNode[] solvedNodes; // 通关节点
-	private List<Map<Long, MostLinkLinkNode>> nodes; // 已搜索路径
-	private Deque<MostLinkLinkNode> deque; // 未搜索路径
+	private TheSameWorldNode[] solvedNodes; // 通关节点
+	private List<Map<Long, TheSameWorldNode>> nodes; // 已搜索路径
+	private Deque<TheSameWorldNode> deque; // 未搜索路径
 	private long sum; // 搜索节点数量
 	private long[] values; // 存放2^n
 
-	public MostLinkLinkNodeTree(int[][] status, int[][] startPoints, long target) {
+	public TheSameWorldTree(int[][] status, int[][] startPoints, long target) {
 		this.status = status;
 		this.target = target;
 		nodes = new ArrayList<>(startPoints.length);
@@ -36,7 +36,7 @@ public class MostLinkLinkNodeTree {
 			int index = getIndex(startPoints[i][0], startPoints[i][1]);
 			long value = getValue(index);
 
-			MostLinkLinkNode node = new MostLinkLinkNode();
+			TheSameWorldNode node = new TheSameWorldNode();
 			node.setValue(value);
 			node.setRow(startPoints[i][0]);
 			node.setCol(startPoints[i][1]);
@@ -45,7 +45,7 @@ public class MostLinkLinkNodeTree {
 			nodes.get(i).put(value, node);
 			sum++;
 		}
-		solvedNodes = new MostLinkLinkNode[startPoints.length];
+		solvedNodes = new TheSameWorldNode[startPoints.length];
 	}
 
 	private int[][] directions = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}}; // 上、右、下、左
@@ -54,14 +54,14 @@ public class MostLinkLinkNodeTree {
 	public void search(boolean dfs) {
 		long startTime = System.currentTimeMillis();
 		while (!deque.isEmpty()) {
-			MostLinkLinkNode parent = deque.poll();
+			TheSameWorldNode parent = deque.poll();
 			for (int direction = 0; direction < directions.length; direction++) {
 				if (solved(parent)) {
 					printSearchInfo(startTime);
 					TheSameWorldUtil.printPath(status, solvedNodes);
 					return;
 				} else {
-					MostLinkLinkNode childNode = nextStep(parent, direction);
+					TheSameWorldNode childNode = nextStep(parent, direction);
 					if (childNode != null) {
 						sum++;
 						if (dfs) {
@@ -77,7 +77,7 @@ public class MostLinkLinkNodeTree {
 	}
 
 	// 走一步
-	private MostLinkLinkNode nextStep(MostLinkLinkNode parent, int direction) {
+	private TheSameWorldNode nextStep(TheSameWorldNode parent, int direction) {
 		int childRow = parent.getRow() + directions[direction][0];
 		int childCol = parent.getCol() + directions[direction][1];
 		if (childRow < 0 || childRow >= status.length || childCol < 0 || childCol >= status[childRow].length || status[childRow][childCol] == 0) {
@@ -88,7 +88,7 @@ public class MostLinkLinkNodeTree {
 			return null;
 		}
 		long childValue = parent.getValue() | getValue(childIndex);
-		MostLinkLinkNode childNode = new MostLinkLinkNode();
+		TheSameWorldNode childNode = new TheSameWorldNode();
 		childNode.setParent(parent);
 		childNode.setValue(childValue);
 		childNode.setRow(childRow);
@@ -104,7 +104,7 @@ public class MostLinkLinkNodeTree {
 	}
 
 	// 检查是否是符合目标的路径
-	private boolean solved(MostLinkLinkNode node) {
+	private boolean solved(TheSameWorldNode node) {
 		long nextTarget = target;
 		for (int i = 0; i < solvedNodes.length && node != null; i++) {
 			nextTarget = nextTarget ^ node.getValue();

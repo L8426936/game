@@ -1,44 +1,85 @@
 package solved.evlover;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class EvloverTest {
     public static void main(String[] args) {
-        int[] startStatus = {
-                   0,0,0,0,
-                  1,0,0,0,1,
-                 0,0,0,0,0,0,
-                0,0,0,1,0,0,0,
-                 0,1,0,0,1,0,
-                  0,0,1,0,0,
-                   0,0,0,0
-        };
-        int[] endStatus = {
-                   0,0,0,0,
-                  0,0,0,0,0,
-                 0,0,1,1,0,0,
-                0,0,0,1,0,0,0,
-                 0,0,1,0,0,0,
-                  0,1,1,0,0,
-                   0,0,0,0
-        };
+        int layer = 2, count = 3;
+        playRandomStatus(layer, count);
+    }
 
-        // int layer = 3, count = 5;
-        // int[] startStatus = EvloverNodeUtil.randomStatus(layer, count);
-        // int[] endStatus = EvloverNodeUtil.randomStatus(layer, count);
-        // EvloverNodeUtil.printlnStatus(layer, EvloverNodeUtil.binaryToLong(startStatus));
-        // System.out.format(String.format("%%%dc%%n", layer * 2 + 1), '↓');
-        // EvloverNodeUtil.printlnStatus(layer, EvloverNodeUtil.binaryToLong(endStatus));
-
-        EvloverNodeTree evloverNodeTree = new EvloverNodeTree(startStatus, endStatus);
-        long millis = System.currentTimeMillis();
-        EvloverNode[] evloverNodes = evloverNodeTree.bidirectionalBreadthFirstSearch();
-        System.out.format("搜索时间: %dms%n", System.currentTimeMillis() - millis);
-        for (int i = 0; i < evloverNodes.length; i++) {
-            EvloverNode evloverNode = evloverNodes[i];
-            System.out.format("step:%d x:%d y:%d z:%d action:%c%n", i + 1, evloverNode.getX(), evloverNode.getY(), evloverNode.getZ(), evloverNode.getAction());
-            EvloverNodeUtil.printlnStatus(3, evloverNode.getStatus());
+    private static void printlnAllStatus(int layer, int count) {
+        List<char[]> allStatus = EvloverUtil.allStatus(layer, count);
+        for (char[] status : allStatus) {
+            EvloverUtil.printlnStatus(status);
             System.out.println();
         }
-
-        // AutoPlay.play(3);
     }
+
+    private static void printlnAllUniqueStatus(int layer, int count) {
+        EvloverUtil evloverUtil = new EvloverUtil(layer);
+        List<char[]> allUniqueStatus = evloverUtil.allUniqueStatus(count);
+        for (char[] status : allUniqueStatus) {
+            EvloverUtil.printlnStatus(status);
+            System.out.println();
+        }
+    }
+
+    private static void playRandomStatus(int layer, int count) {
+        char[] startStatus = EvloverUtil.randomStatus(layer, count);
+        char[] endStatus = EvloverUtil.randomStatus(layer, count);
+        EvloverNodeTree evloverNodeTree = new EvloverNodeTree(layer);
+        List<EvloverNode> passPath = evloverNodeTree.BBFSRemoveSymmetry(startStatus, endStatus);
+        evloverNodeTree.printlnPassPath(passPath);
+    }
+
+    private static void maxStep(char[] status) {
+        int layer = EvloverUtil.layer(status);
+        EvloverNodeTree evloverNodeTree = new EvloverNodeTree(layer);
+        List<List<EvloverNode>> lists = evloverNodeTree.buildTree(status);
+        System.out.format("maxStep:%d%n", lists.size() - 1);
+    }
+
+    private static void allUniqueStatusMaxStepMultithreading(int layer, int count) {
+        EvloverUtil evloverUtil = new EvloverUtil(layer);
+        List<char[]> allUniqueStatus = evloverUtil.allUniqueStatus(count);
+        System.out.format("allUniqueStatus:%d%n", allUniqueStatus.size());
+        EvloverNodeTree evloverNodeTree = new EvloverNodeTree(layer);
+        ExecutorService executorService = Executors.newFixedThreadPool(4);
+        AtomicInteger finishStatusCount = new AtomicInteger();
+        ConcurrentLinkedQueue<Integer> steps = new ConcurrentLinkedQueue<>();
+        for (char[] status : allUniqueStatus) {
+            executorService.execute(new Runnable() {
+                @Override
+                public void run() {
+                    long currentTimeMillis = System.currentTimeMillis();
+                    List<List<EvloverNode>> lists = evloverNodeTree.buildTree(status);
+                    steps.offer(lists.size() - 1);
+                    System.out.format("i:%d status:%s step:%d time:%dms%n", finishStatusCount.getAndIncrement(), String.valueOf(status), lists.size() - 1, System.currentTimeMillis() - currentTimeMillis);
+                }
+            });
+        }
+        executorService.shutdown();
+        try {
+            while (!executorService.awaitTermination(10, TimeUnit.MINUTES));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        Map<Integer, Integer> stepCount = new HashMap<>();
+        for (Integer step : steps) {
+            Integer value = stepCount.get(step);
+            stepCount.put(step, value == null ? 1 : ++value);
+        }
+        stepCount.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
+            System.out.format("layer:%d count:%d step:%d stepCount:%d%n", layer, count, entry.getKey(), entry.getValue());
+        });
+    }
+
 }
