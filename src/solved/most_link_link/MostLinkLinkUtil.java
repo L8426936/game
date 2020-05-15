@@ -76,6 +76,7 @@ public class MostLinkLinkUtil {
     // 分析游戏状态
     private static GameStatusInfo analysisScreenshot() throws Exception {
         BufferedImage screenshot = ImageIO.read(new File(BASE_PATH + "most_link_link.png"));
+        // Graphics graphics = screenshot.getGraphics();
         int height = screenshot.getHeight();
         int width = screenshot.getWidth();
 
@@ -83,33 +84,43 @@ public class MostLinkLinkUtil {
         gameStatusInfo.setWidth(width);
         gameStatusInfo.setHeight(height);
 
-        int topBorderY = 0, bottomBorderY = 0, blockSize = 0, blockSpace = 0, leftBorderX = width, rightBorderX = 0;
+        int topBorderY = 0, bottomBorderY = 0, blockXSize = 0, blockSize = 0, blockSpace = 0, leftBorderX = width, rightBorderX = 0;
         analysisGameStatusInfoOver:
-        for (int y = (int) (0.175 * height); y < height; y++) {
+        for (int y = (int) (0.165 * height); y < height; y++) {
             for (int x = 0; x < width; x++) {
                 if (screenshot.getRGB(x, y) == -3355444) { // -3355444灰色
                     topBorderY = y;
+                    // graphics.drawLine(0, topBorderY, width - 1, topBorderY);
                     // System.out.println("关卡上边界：" + topBorderY);
 
-                    while (screenshot.getRGB(x + blockSize, y) == -3355444) { // -3355444灰色
+                    while (x + blockXSize < width && screenshot.getRGB(x + blockXSize, y) == -3355444) { // -3355444灰色
+                        blockXSize++;
+                    }
+                    // System.out.println("关卡色块大小：" + blockXSize);
+                    while (screenshot.getRGB(x, y + blockSize) == -3355444) { // -3355444灰色
                         blockSize++;
                     }
                     gameStatusInfo.setStartY(topBorderY + (blockSize >> 1));
                     gameStatusInfo.setBlockSize(blockSize);
+                    // graphics.drawLine(0, topBorderY, width - 1, topBorderY);
+                    // graphics.drawLine(0, topBorderY + (blockSize >> 1), width - 1, topBorderY + (blockSize >> 1));
+                    // graphics.drawLine(0, topBorderY + blockSize, width - 1, topBorderY + blockSize);
                     // System.out.println("关卡色块大小：" + blockSize);
 
                     int borderX = x + (blockSize >> 1), borderY = y + (blockSize >> 1);
-                    while (screenshot.getRGB(borderX, y) != -14472389) { // -14472389背景色
+                    while (borderX < width && screenshot.getRGB(borderX, y) != -14472389) { // -14472389背景色
                         borderX++;
                     }
                     while (screenshot.getRGB(x, borderY) != -14472389) { // -14472389背景色
                         borderY++;
                     }
-                    while (screenshot.getRGB(borderX + blockSpace, y) != -3355444 // -3355444灰色
+                    while ((borderX + blockSpace < width && screenshot.getRGB(borderX + blockSpace, y) != -3355444 || screenshot.getRGB(borderX - 1, y) == -3355444) // -3355444灰色
                             && screenshot.getRGB(x, borderY + blockSpace) != -3355444) { // -3355444灰色
                         blockSpace++;
                     }
                     gameStatusInfo.setBlockSpace(blockSpace);
+                    // graphics.drawLine(0, topBorderY + blockSize, width - 1, topBorderY + blockSize);
+                    // graphics.drawLine(0, topBorderY + blockSize + blockSpace, width - 1, topBorderY + blockSize + blockSpace);
                     // System.out.println("关卡色块间隔：" + blockSpace);
 
                     for (y = topBorderY + (blockSize >> 1); y < height; y += blockSize + blockSpace) {
@@ -128,7 +139,13 @@ public class MostLinkLinkUtil {
                             break;
                         }
                     }
-                    gameStatusInfo.setStartX(leftBorderX + (blockSize >> 1));
+                    gameStatusInfo.setStartX(blockSize - blockXSize > (blockSize >> 3) ? leftBorderX + ((blockSize >> 1) - (blockSize - blockXSize)) : leftBorderX + (blockSize >> 1));
+                    // gameStatusInfo.setStartX(leftBorderX + (blockSize >> 1));
+                    // graphics.drawLine(leftBorderX, 0, leftBorderX, height - 1);
+                    // graphics.drawLine(rightBorderX, 0, rightBorderX, height - 1);
+                    // graphics.drawLine(leftBorderX, 0, leftBorderX, height - 1);
+                    // graphics.drawLine(leftBorderX + (blockSize >> 1), 0, leftBorderX + (blockSize >> 1), height - 1);
+                    // graphics.drawLine(leftBorderX + blockSize, 0, leftBorderX + blockSize, height - 1);
                     // System.out.println("关卡左右边界：" + leftBorderX + " " + rightBorderX);
 
                     while (y > topBorderY) {
@@ -144,6 +161,7 @@ public class MostLinkLinkUtil {
                         }
                         bottomBorderY = --y;
                     }
+                    // graphics.drawLine(0, bottomBorderY, width - 1, bottomBorderY);
                     // System.out.println("关卡下边界：" + bottomBorderY);
                     break analysisGameStatusInfoOver;
                 }
@@ -154,7 +172,7 @@ public class MostLinkLinkUtil {
         int startPoint = 0;
         for (int y = topBorderY + (blockSize >> 1), index = 0, row = 0; startPoint <= 1 && y < bottomBorderY; y += blockSpace + blockSize, row++) {
             List<Character> rowStatus = new ArrayList<>();
-            for (int x = leftBorderX + (blockSize >> 1), col = 0; startPoint <= 1 && x < rightBorderX; x += blockSpace + blockSize, index++, col++) {
+            for (int x = blockSize - blockXSize > (blockSize >> 3) ? leftBorderX + ((blockSize >> 1) - (blockSize - blockXSize)) : leftBorderX + (blockSize >> 1), col = 0; startPoint <= 1 && x < rightBorderX; x += blockSpace + blockSize, index++, col++) {
                 int rgb = screenshot.getRGB(x, y);
                 if (rgb == -3355444) { // -3355444灰色
                     rowStatus.add(EMPTY);
@@ -168,9 +186,11 @@ public class MostLinkLinkUtil {
                 } else {
                     rowStatus.add(BAN);
                 }
+                // graphics.drawLine(x, y, x, y);
             }
             lists.add(rowStatus);
         }
+        // ImageIO.write(screenshot, "png", new File(BASE_PATH + "most_link_link_test.png"));
 
         char[][] status = new char[lists.size()][];
         for (int i = 0; i < lists.size(); i++) {
