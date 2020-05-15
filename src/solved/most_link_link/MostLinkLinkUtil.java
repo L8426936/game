@@ -16,7 +16,7 @@ public class MostLinkLinkUtil {
 
     // 好友排行榜
     public static void autoPlayRankingList() {
-        while (true) {
+        for (int tryAgainCount = 0; tryAgainCount < 15; tryAgainCount++) {
             try {
                 long startTime = System.currentTimeMillis();
                 screenshot();
@@ -27,6 +27,7 @@ public class MostLinkLinkUtil {
                     if (nodes != null) {
                         play(nodes, gameStatusInfo);
                         nextGame(gameStatusInfo);
+                        tryAgainCount = 0;
                     } else {
                         System.out.println("游戏搜索失败，重新开始");
                     }
@@ -42,7 +43,7 @@ public class MostLinkLinkUtil {
 
     // 挑战赛
     public static void autoPlayChallenge() {
-        while (true) {
+        for (int tryAgainCount = 0; tryAgainCount < 15; tryAgainCount++) {
             try {
                 long startTime = System.currentTimeMillis();
                 screenshot();
@@ -52,6 +53,7 @@ public class MostLinkLinkUtil {
                     MostLinkLinkNode[] nodes = nodeTree.DFS();
                     if (nodes != null) {
                         play(nodes, gameStatusInfo);
+                        tryAgainCount = 0;
                     } else {
                         System.out.println("游戏搜索失败，重新开始");
                     }
