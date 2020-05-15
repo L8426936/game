@@ -86,7 +86,7 @@ public class EvloverNodeTree {
 
     /**
      * <p>广度优先搜索</p>
-     * <p>BFS: breadth first get</p>
+     * <p>BFS: breadth first search</p>
      *
      * @param startStatus
      * @param endStatus
@@ -140,7 +140,7 @@ public class EvloverNodeTree {
 
     /**
      * <p>广度优先搜索，以每个节点和结束节点的共同对称去除对称节点</p>
-     * <p>BFS: breadth first get</p>
+     * <p>BFS: breadth first search</p>
      *
      * @param startStatus
      * @param endStatus
@@ -223,7 +223,7 @@ public class EvloverNodeTree {
 
     /**
      * <p>双向广度优先搜索</p>
-     * <p>BBFS: bidirectional breadth first get</p>
+     * <p>BBFS: bidirectional breadth first search</p>
      *
      * @param startStatus
      * @param endStatus
@@ -308,7 +308,7 @@ public class EvloverNodeTree {
 
     /**
      * <p>双向广度优先搜索，以每个节点和目标节点的共同对称去除对称节点</p>
-     * <p>BBFS: bidirectional breadth first get</p>
+     * <p>BBFS: bidirectional breadth first search</p>
      *
      * @param startStatus
      * @param endStatus
