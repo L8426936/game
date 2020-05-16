@@ -217,7 +217,7 @@ public class MostLinkLinkUtil {
             while (j + 1 < nodes.length && (nodes[i].getRow() == nodes[j + 1].getRow() || nodes[i].getCol() == nodes[j + 1].getCol())) {
                 j++;
             }
-            String command = String.format("adb shell input swipe %d %d %d %d %d&&", nodes[i].getCol() * offset + startX, nodes[i].getRow() * offset + startY, nodes[j].getCol() * offset + startX, nodes[j].getRow() * offset + startY, (j - i) * 100);
+            String command = String.format("adb shell input touchscreen swipe %d %d %d %d %d&&", nodes[i].getCol() * offset + startX, nodes[i].getRow() * offset + startY, nodes[j].getCol() * offset + startX, nodes[j].getRow() * offset + startY, (j - i) * 100);
             commands.append(command);
             i = j;
         }
@@ -229,8 +229,8 @@ public class MostLinkLinkUtil {
     private static void nextGame(GameStatusInfo gameStatusInfo) throws Exception {
         int width = gameStatusInfo.getWidth();
         int height = gameStatusInfo.getHeight();
-        runtime.exec(String.format("adb shell input tap %d %d", (int) (width * 0.86), (int) (height * 0.343))).waitFor(); // 关闭双倍奖励
-        runtime.exec(String.format("adb shell input tap %d %d", (int) (width * 0.5), (int) (height * 0.625))).waitFor(); // 下一关
+        runtime.exec(String.format("adb shell input touchscreen tap %d %d", (int) (width * 0.86), (int) (height * 0.343))).waitFor(); // 关闭双倍奖励
+        runtime.exec(String.format("adb shell input touchscreen tap %d %d", (int) (width * 0.5), (int) (height * 0.65))).waitFor(); // 下一关
     }
 
     // 打印盘面状态
