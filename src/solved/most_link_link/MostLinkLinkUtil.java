@@ -1,6 +1,7 @@
 package solved.most_link_link;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
@@ -210,16 +211,17 @@ public class MostLinkLinkUtil {
         int startX = gameStatusInfo.getStartX();
         int startY = gameStatusInfo.getStartY();
         int offset = gameStatusInfo.getBlockSpace() + gameStatusInfo.getBlockSize();
+        StringBuilder commands = new StringBuilder("cmd /c ");
         for (int i = 1; i < nodes.length; i++) {
             int j = i;
             while (j + 1 < nodes.length && (nodes[i].getRow() == nodes[j + 1].getRow() || nodes[i].getCol() == nodes[j + 1].getCol())) {
                 j++;
             }
-            String command = String.format("adb shell input swipe %d %d %d %d", nodes[i].getCol() * offset + startX, nodes[i].getRow() * offset + startY, nodes[j].getCol() * offset + startX, nodes[j].getRow() * offset + startY);
-            // System.out.println(command);
-            runtime.exec(command).waitFor();
+            String command = String.format("adb shell input swipe %d %d %d %d %d&&", nodes[i].getCol() * offset + startX, nodes[i].getRow() * offset + startY, nodes[j].getCol() * offset + startX, nodes[j].getRow() * offset + startY, (j - i) * 100);
+            commands.append(command);
             i = j;
         }
+        runtime.exec(commands.substring(0, commands.length() - 2)).waitFor();
         Thread.sleep(800);
     }
 
