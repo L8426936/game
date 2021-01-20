@@ -20,11 +20,12 @@ public class AutoPlay {
             // 曹操
             {"E082810E04008FCF"}
     };
+    private static final Path BASE_PATH = Paths.get(System.getProperty("user.dir"), "src", "solved", "klotski", "data");
     private final static Runtime runtime = Runtime.getRuntime();
 
     public static void play(int moveMode) {
         try {
-            Path path = Paths.get("G:", "klotski", "klotski.png");
+            Path path = Paths.get(BASE_PATH.toString(), "klotski.png");
             if (Files.notExists(path.getParent())) {
                 Files.createDirectories(path.getParent());
             }
@@ -61,7 +62,7 @@ public class AutoPlay {
      */
     private static void screenshot() throws Exception {
         runtime.exec("adb shell screencap /sdcard/klotski.png").waitFor();
-        runtime.exec("adb pull /sdcard/klotski.png G:/klotski").waitFor();
+        runtime.exec("adb pull /sdcard/klotski.png " + BASE_PATH.toString()).waitFor();
     }
 
     /**

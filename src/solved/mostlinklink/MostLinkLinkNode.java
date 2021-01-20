@@ -1,4 +1,4 @@
-package solved.most_link_link;
+package solved.mostlinklink;
 
 public class MostLinkLinkNode {
 	

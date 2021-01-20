@@ -1,4 +1,4 @@
-package solved.most_link_link;
+package solved.mostlinklink;
 
 public class MostLinkLinkNodeTree {
 
@@ -6,23 +6,22 @@ public class MostLinkLinkNodeTree {
 	private MostLinkLinkNode[] nodes;
 	private int count, nodesIndex, sum; // count方格数量，sum搜索的节点数量
 	
-	public MostLinkLinkNodeTree(char[][] status, int count, int startRow, int startCol) {
-		this.status = status;
-		this.count = count;
+	public MostLinkLinkNodeTree(GameInfo gameInfo) {
+		this.status = gameInfo.getStatus();
+		this.count = gameInfo.getCount();
 		this.nodes = new MostLinkLinkNode[count];
 
 		MostLinkLinkNode root = new MostLinkLinkNode();
-		root.setRow(startRow);
-		root.setCol(startCol);
+		root.setRow(gameInfo.getStartRow());
+		root.setCol(gameInfo.getStartCol());
 		this.nodes[nodesIndex] = root;
 		this.sum++;
 		this.count--;
 	}
-	
+
 	private int[][] directions = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}}; // 上、右、下、左
 	// 深度优先搜索
 	public MostLinkLinkNode[] DFS() {
-		long startTime = System.currentTimeMillis();
 		OVER:
 			while (nodes[0].getDirectionCount() < directions.length) {
 				MostLinkLinkNode parent = nodes[nodesIndex];
@@ -41,7 +40,6 @@ public class MostLinkLinkNodeTree {
 						nodes[++nodesIndex] = parent = child;
 						sum++;
 						if (--count == 0) {
-							System.out.format("搜索时间:%d毫秒, 搜索的节点数量:%d%n", System.currentTimeMillis() - startTime, sum);
 							break OVER;
 						}
 					} else {
@@ -51,6 +49,7 @@ public class MostLinkLinkNodeTree {
 					}
 				}
 			}
+		System.out.format("搜索的节点数量:%d%n", sum);
 		return count == 0 ? nodes : null;
 	}
 	

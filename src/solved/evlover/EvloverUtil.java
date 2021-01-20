@@ -15,19 +15,8 @@ public class EvloverUtil {
      * <p>A: anticlockwise swap 逆时针交换</p>
      */
     public static final int C = 1, P = 2, A = 3;
-    public static final long[] BINARY_VALUE = new long[61];
     private int layer;
-    /**
-     * <p>rowBeforePointSum: 该行前六边形点的数量总和</p>
-     */
-    private int[] indexToX, indexToY, indexToZ, rowBeforePointSum;
-
-    static {
-        for (int i = 0; i < BINARY_VALUE.length; i++) {
-            BINARY_VALUE[i] = 1L << i;
-        }
-        // System.out.println(Arrays.toString(BINARY_VALUE));
-    }
+    private int[] indexToX, indexToY, indexToZ, xyzToIndex;
 
     public EvloverUtil(int layer) {
         this.layer = layer;
@@ -51,16 +40,18 @@ public class EvloverUtil {
         // System.out.println(Arrays.toString(indexToY));
         // System.out.println(Arrays.toString(indexToZ));
 
-        rowBeforePointSum = new int[2 * layer + 1];
-        for (int z = layer, sum = 3 * layer * (layer + 1) + 1; z >= -layer; z--) {
-            rowBeforePointSum[layer + z] = sum -= 2 * layer + 1 - Math.abs(z);
+        int size = 2 * layer + 1, index = 0;
+        xyzToIndex = new int[size * size];
+        for (int row = -layer; row <= layer; row++) {
+            for (int col = 0; col < size; col++) {
+                xyzToIndex[size * (row + layer) + col] = col < size - Math.abs(row) ? index++ : -1;
+            }
         }
-        // System.out.println(Arrays.toString(rowBeforePointSum));
+        // System.out.println(Arrays.toString(xyzToIndex));
     }
 
     /**
      * <p>返回一个数组型随机状态</p>
-     *
      * @param layer 六边形层数
      * @param count 点的数量
      * @return if count > 3 * layer * (layer + 1) + 1, return []
@@ -89,14 +80,13 @@ public class EvloverUtil {
 
     /**
      * <p>返回所有数组型状态</p>
-     *
      * @param layer 六边形层数
      * @param count 点的数量
      * @return
      */
     public static List<char[]> allStatus(int layer, int count) {
         if (count > 3 * layer * (layer + 1) + 1) {
-            return new ArrayList<>();
+            return new ArrayList<>(0);
         }
 
         char[] originStatus = new char[3 * layer * (layer + 1) + 1];
@@ -122,7 +112,6 @@ public class EvloverUtil {
 
     /**
      * <p>返回所有数组型状态，去除所有旋转、对称</p>
-     *
      * @param count 点的数量
      * @return
      */
@@ -150,7 +139,6 @@ public class EvloverUtil {
     /**
      * <p>返回六边形层数</p>
      * <p>六边形个数和公式: 3n(n + 1) + 1; n指六边形层数，一个点为0层</p>
-     *
      * @param status 数组型状态
      * @return 六边形不存在返回-1
      */
@@ -164,7 +152,6 @@ public class EvloverUtil {
 
     /**
      * <p>数组型状态转整型状态，最多支持4层的六边形</p>
-     *
      * @param charsStatus 数组型状态
      * @return 整型状态
      */
@@ -172,7 +159,7 @@ public class EvloverUtil {
         long longStatus = 0;
         for (int index = 0; index < charsStatus.length; index++) {
             if (charsStatus[index] != '0') {
-                longStatus |= BINARY_VALUE[index];
+                longStatus |= 1L << index;
             }
         }
         return longStatus;
@@ -180,15 +167,14 @@ public class EvloverUtil {
 
     /**
      * <p>整型状态转数组型状态</p>
-     *
-     * @param layer      六边形层数
+     * @param layer 六边形层数
      * @param longStatus 整型状态
      * @return 数组型状态
      */
     public static char[] longStatusToCharsStatus(int layer, long longStatus) {
         char[] charsStatus = new char[3 * layer * (layer + 1) + 1];
         for (int index = 3 * layer * (layer + 1); index >= 0; index--) {
-            charsStatus[index] = ((longStatus & BINARY_VALUE[index]) != 0 ? '1' : '0');
+            charsStatus[index] = ((longStatus & (1L << index)) != 0 ? '1' : '0');
         }
         // System.out.println(Arrays.toString(charsStatus));
         return charsStatus;
@@ -196,7 +182,6 @@ public class EvloverUtil {
 
     /**
      * <p>打印数组型状态</p>
-     *
      * @param status
      */
     public static void printlnStatus(char[] status) {
@@ -211,9 +196,12 @@ public class EvloverUtil {
              */
             for (int col = 2 * layer + 1 - Math.abs(z); col > 0; col--) {
                 if (status[index++] != '0') {
-                    System.out.format("● ");
+                    System.out.print('●');
                 } else {
-                    System.out.format("○ ");
+                    System.out.print('○');
+                }
+                if (col > 1) {
+                    System.out.print(' ');
                 }
             }
             System.out.println();
@@ -229,7 +217,6 @@ public class EvloverUtil {
      * <p>垂直于X轴对称: 16</p>
      * <p>垂直于Y轴对称: 32</p>
      * <p>垂直于Z轴对称: 64</p>
-     *
      * @param x
      * @param y
      * @param z
@@ -266,7 +253,6 @@ public class EvloverUtil {
      * <p>垂直于X轴对称: 16</p>
      * <p>垂直于Y轴对称: 32</p>
      * <p>垂直于Z轴对称: 64</p>
-     *
      * @param x
      * @param y
      * @param z
@@ -303,7 +289,6 @@ public class EvloverUtil {
      * <p>垂直于X轴对称: 16</p>
      * <p>垂直于Y轴对称: 32</p>
      * <p>垂直于Z轴对称: 64</p>
-     *
      * @param x
      * @param y
      * @param z
@@ -340,18 +325,12 @@ public class EvloverUtil {
      * <p>垂直于X轴对称: 16</p>
      * <p>垂直于Y轴对称: 32</p>
      * <p>垂直于Z轴对称: 64</p>
-     *
      * @param symmetryType
      * @return
      */
     public static int symmetryAction(int action, int symmetryType) {
         switch (symmetryType) {
-            case 2:
-            case 4:
-            case 8:
-            case 16:
-            case 32:
-            case 64:
+            case 2: case 4: case 8: case 16: case 32: case 64:
                 switch (action) {
                     case A:
                         return C;
@@ -366,7 +345,6 @@ public class EvloverUtil {
 
     /**
      * <p>逆向action</p>
-     *
      * @param action
      * @return
      */
@@ -383,7 +361,6 @@ public class EvloverUtil {
 
     /**
      * <p>操作，整型转字符</p>
-     *
      * @param action
      * @return
      */
@@ -402,7 +379,6 @@ public class EvloverUtil {
 
     /**
      * <p>二进制1的个数</p>
-     *
      * @param status
      * @return
      */
@@ -417,14 +393,25 @@ public class EvloverUtil {
 
     /**
      * <p>x，y，z对应一维坐标</p>
-     *
      * @param x
      * @param y
      * @param z
-     * @return index, 0<=index<=3*layer*(layer + 1)
+     * @return
      */
     public int index(int x, int y, int z) {
-        return rowBeforePointSum[layer + z] + (z <= 0 ? layer - y : layer + x);
+        return xyzToIndex[((layer << 1) + 1) * (z + layer) + (z <= 0 ? layer - y : layer + x)];
+    }
+
+    public int indexToX(int index) {
+        return indexToX[index];
+    }
+
+    public int indexToY(int index) {
+        return indexToY[index];
+    }
+
+    public int indexToZ(int index) {
+        return indexToZ[index];
     }
 
     /**
@@ -436,7 +423,6 @@ public class EvloverUtil {
      * <p>垂直于X轴对称: 16</p>
      * <p>垂直于Y轴对称: 32</p>
      * <p>垂直于Z轴对称: 64</p>
-     *
      * @param status
      * @param symmetryType
      * @return
@@ -446,17 +432,17 @@ public class EvloverUtil {
             case 1:
                 return originSymmetryStatus(status);
             case 2:
-                return xAxiSymmetryStatus(status);
+                return xAxisSymmetryStatus(status);
             case 4:
-                return yAxiSymmetryStatus(status);
+                return yAxisSymmetryStatus(status);
             case 8:
-                return zAxiSymmetryStatus(status);
+                return zAxisSymmetryStatus(status);
             case 16:
-                return perpendicularToXAxiSymmetryStatus(status);
+                return perpendicularToXAxisSymmetryStatus(status);
             case 32:
-                return perpendicularToYAxiSymmetryStatus(status);
+                return perpendicularToYAxisSymmetryStatus(status);
             case 64:
-                return perpendicularToZAxiSymmetryStatus(status);
+                return perpendicularToZAxisSymmetryStatus(status);
             default:
         }
         return status;
@@ -464,7 +450,6 @@ public class EvloverUtil {
 
     /**
      * <p>原点对称状态</p>
-     *
      * @param status
      * @return
      */
@@ -472,12 +457,12 @@ public class EvloverUtil {
         long symmetryStatus = 0;
         for (int index = 0; status > 0; index++) {
             // 当前点和对称点有值
-            if ((status & BINARY_VALUE[index]) > 0) {
+            if ((status & (1L << index)) > 0) {
                 // 去除已检查点
-                status ^= BINARY_VALUE[index];
+                status ^= 1L << index;
                 int symmetryX = -indexToX[index], symmetryY = -indexToY[index], symmetryZ = -indexToZ[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
-                symmetryStatus |= BINARY_VALUE[symmetryIndex];
+                symmetryStatus |= 1L << symmetryIndex;
             }
         }
         return symmetryStatus;
@@ -485,20 +470,19 @@ public class EvloverUtil {
 
     /**
      * <p>X轴对称状态</p>
-     *
      * @param status
      * @return
      */
-    public long xAxiSymmetryStatus(long status) {
+    public long xAxisSymmetryStatus(long status) {
         long symmetryStatus = 0;
         for (int index = 0; status > 0; index++) {
             // 当前点有值
-            if ((status & BINARY_VALUE[index]) > 0) {
+            if ((status & (1L << index)) > 0) {
                 // 去除已检查点
-                status ^= BINARY_VALUE[index];
+                status ^= 1L << index;
                 int symmetryX = -indexToY[index], symmetryY = -indexToX[index], symmetryZ = -indexToZ[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
-                symmetryStatus |= BINARY_VALUE[symmetryIndex];
+                symmetryStatus |= 1L << symmetryIndex;
             }
         }
         return symmetryStatus;
@@ -506,20 +490,19 @@ public class EvloverUtil {
 
     /**
      * <p>Y轴对称状态</p>
-     *
      * @param status
      * @return
      */
-    public long yAxiSymmetryStatus(long status) {
+    public long yAxisSymmetryStatus(long status) {
         long symmetryStatus = 0;
         for (int index = 0; status > 0; index++) {
             // 当前点有值
-            if ((status & BINARY_VALUE[index]) > 0) {
+            if ((status & (1L << index)) > 0) {
                 // 去除已检查点
-                status ^= BINARY_VALUE[index];
+                status ^= 1L << index;
                 int symmetryX = -indexToX[index], symmetryY = -indexToZ[index], symmetryZ = -indexToY[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
-                symmetryStatus |= BINARY_VALUE[symmetryIndex];
+                symmetryStatus |= 1L << symmetryIndex;
             }
         }
         return symmetryStatus;
@@ -527,20 +510,19 @@ public class EvloverUtil {
 
     /**
      * <p>Z轴对称状态</p>
-     *
      * @param status
      * @return
      */
-    public long zAxiSymmetryStatus(long status) {
+    public long zAxisSymmetryStatus(long status) {
         long symmetryStatus = 0;
         for (int index = 0; status > 0; index++) {
             // 当前点有值
-            if ((status & BINARY_VALUE[index]) > 0) {
+            if ((status & (1L << index)) > 0) {
                 // 去除已检查点
-                status ^= BINARY_VALUE[index];
+                status ^= 1L << index;
                 int symmetryX = -indexToZ[index], symmetryY = -indexToY[index], symmetryZ = -indexToX[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
-                symmetryStatus |= BINARY_VALUE[symmetryIndex];
+                symmetryStatus |= 1L << symmetryIndex;
             }
         }
         return symmetryStatus;
@@ -548,20 +530,19 @@ public class EvloverUtil {
 
     /**
      * <p>垂直于X轴对称状态</p>
-     *
      * @param status
      * @return
      */
-    public long perpendicularToXAxiSymmetryStatus(long status) {
+    public long perpendicularToXAxisSymmetryStatus(long status) {
         long symmetryStatus = 0;
         for (int index = 0; status > 0; index++) {
             // 当前点有值
-            if ((status & BINARY_VALUE[index]) > 0) {
+            if ((status & (1L << index)) > 0) {
                 // 去除已检查点
-                status ^= BINARY_VALUE[index];
+                status ^= 1L << index;
                 int symmetryX = indexToY[index], symmetryY = indexToX[index], symmetryZ = indexToZ[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
-                symmetryStatus |= BINARY_VALUE[symmetryIndex];
+                symmetryStatus |= 1L << symmetryIndex;
             }
         }
         return symmetryStatus;
@@ -569,20 +550,19 @@ public class EvloverUtil {
 
     /**
      * <p>垂直于Y轴对称状态</p>
-     *
      * @param status
      * @return
      */
-    public long perpendicularToYAxiSymmetryStatus(long status) {
+    public long perpendicularToYAxisSymmetryStatus(long status) {
         long symmetryStatus = 0;
         for (int index = 0; status > 0; index++) {
             // 当前点有值
-            if ((status & BINARY_VALUE[index]) > 0) {
+            if ((status & (1L << index)) > 0) {
                 // 去除已检查点
-                status ^= BINARY_VALUE[index];
+                status ^= 1L << index;
                 int symmetryX = indexToX[index], symmetryY = indexToZ[index], symmetryZ = indexToY[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
-                symmetryStatus |= BINARY_VALUE[symmetryIndex];
+                symmetryStatus |= 1L << symmetryIndex;
             }
         }
         return symmetryStatus;
@@ -590,20 +570,19 @@ public class EvloverUtil {
 
     /**
      * <p>垂直于Z轴对称状态</p>
-     *
      * @param status
      * @return
      */
-    public long perpendicularToZAxiSymmetryStatus(long status) {
+    public long perpendicularToZAxisSymmetryStatus(long status) {
         long symmetryStatus = 0;
         for (int index = 0; status > 0; index++) {
             // 当前点有值
-            if ((status & BINARY_VALUE[index]) > 0) {
+            if ((status & (1L << index)) > 0) {
                 // 去除已检查点
-                status ^= BINARY_VALUE[index];
+                status ^= 1L << index;
                 int symmetryX = indexToZ[index], symmetryY = indexToY[index], symmetryZ = indexToX[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
-                symmetryStatus |= BINARY_VALUE[symmetryIndex];
+                symmetryStatus |= 1L << symmetryIndex;
             }
         }
         return symmetryStatus;
@@ -618,7 +597,6 @@ public class EvloverUtil {
      * <p>垂直于X轴对称: 16</p>
      * <p>垂直于Y轴对称: 32</p>
      * <p>垂直于Z轴对称: 64</p>
-     *
      * @param status
      * @return
      */
@@ -627,22 +605,22 @@ public class EvloverUtil {
         if (isOriginSymmetry(status)) {
             allSymmetryType = 1;
         }
-        if (isXAxiSymmetry(status)) {
+        if (isXAxisSymmetry(status)) {
             allSymmetryType |= 2;
         }
-        if (isYAxiSymmetry(status)) {
+        if (isYAxisSymmetry(status)) {
             allSymmetryType |= 4;
         }
-        if (isZAxiSymmetry(status)) {
+        if (isZAxisSymmetry(status)) {
             allSymmetryType |= 8;
         }
-        if (isPerpendicularToXAxiSymmetry(status)) {
+        if (isPerpendicularToXAxisSymmetry(status)) {
             allSymmetryType |= 16;
         }
-        if (isPerpendicularToYAxiSymmetry(status)) {
+        if (isPerpendicularToYAxisSymmetry(status)) {
             allSymmetryType |= 32;
         }
-        if (isPerpendicularToZAxiSymmetry(status)) {
+        if (isPerpendicularToZAxisSymmetry(status)) {
             allSymmetryType |= 64;
         }
         return allSymmetryType;
@@ -657,7 +635,6 @@ public class EvloverUtil {
      * <p>垂直于X轴对称: 16</p>
      * <p>垂直于Y轴对称: 32</p>
      * <p>垂直于Z轴对称: 64</p>
-     *
      * @param status1
      * @param status2
      * @return
@@ -667,22 +644,22 @@ public class EvloverUtil {
         if (isOriginSymmetry(status1) && isOriginSymmetry(status2)) {
             allCommonSymmetryType = 1;
         }
-        if (isXAxiSymmetry(status1) && isXAxiSymmetry(status2)) {
+        if (isXAxisSymmetry(status1) && isXAxisSymmetry(status2)) {
             allCommonSymmetryType |= 2;
         }
-        if (isYAxiSymmetry(status1) && isYAxiSymmetry(status2)) {
+        if (isYAxisSymmetry(status1) && isYAxisSymmetry(status2)) {
             allCommonSymmetryType |= 4;
         }
-        if (isZAxiSymmetry(status1) && isZAxiSymmetry(status2)) {
+        if (isZAxisSymmetry(status1) && isZAxisSymmetry(status2)) {
             allCommonSymmetryType |= 8;
         }
-        if (isPerpendicularToXAxiSymmetry(status1) && isPerpendicularToXAxiSymmetry(status2)) {
+        if (isPerpendicularToXAxisSymmetry(status1) && isPerpendicularToXAxisSymmetry(status2)) {
             allCommonSymmetryType |= 16;
         }
-        if (isPerpendicularToYAxiSymmetry(status1) && isPerpendicularToYAxiSymmetry(status2)) {
+        if (isPerpendicularToYAxisSymmetry(status1) && isPerpendicularToYAxisSymmetry(status2)) {
             allCommonSymmetryType |= 32;
         }
-        if (isPerpendicularToZAxiSymmetry(status1) && isPerpendicularToZAxiSymmetry(status2)) {
+        if (isPerpendicularToZAxisSymmetry(status1) && isPerpendicularToZAxisSymmetry(status2)) {
             allCommonSymmetryType |= 64;
         }
         return allCommonSymmetryType;
@@ -690,19 +667,18 @@ public class EvloverUtil {
 
     /**
      * <p>关于原点对称</p>
-     *
      * @param status
      * @return
      */
     public boolean isOriginSymmetry(long status) {
         for (int index = 0; status > 0; index++) {
             // 当前点有值
-            if ((status & BINARY_VALUE[index]) > 0) {
+            if ((status & (1L << index)) > 0) {
                 int symmetryX = -indexToX[index], symmetryY = -indexToY[index], symmetryZ = -indexToZ[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
-                if ((status & BINARY_VALUE[symmetryIndex]) > 0) {
+                if ((status & (1L << symmetryIndex)) > 0) {
                     // 对称点有值，移除检查的点、对称点
-                    status ^= BINARY_VALUE[index] | BINARY_VALUE[symmetryIndex];
+                    status ^= (1L << index) | (1L << symmetryIndex);
                 } else {
                     return false;
                 }
@@ -713,19 +689,18 @@ public class EvloverUtil {
 
     /**
      * <p>关于X轴对称</p>
-     *
      * @param status
      * @return
      */
-    public boolean isXAxiSymmetry(long status) {
+    public boolean isXAxisSymmetry(long status) {
         for (int index = 0; status > 0; index++) {
             // 当前点有值
-            if ((status & BINARY_VALUE[index]) > 0) {
+            if ((status & (1L << index)) > 0) {
                 int symmetryX = -indexToY[index], symmetryY = -indexToX[index], symmetryZ = -indexToZ[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
-                if ((status & BINARY_VALUE[symmetryIndex]) > 0) {
+                if ((status & (1L << symmetryIndex)) > 0) {
                     // 对称点有值，移除检查的点、对称点
-                    status ^= BINARY_VALUE[index] | BINARY_VALUE[symmetryIndex];
+                    status ^= (1L << index) | (1L << symmetryIndex);
                 } else {
                     return false;
                 }
@@ -736,19 +711,18 @@ public class EvloverUtil {
 
     /**
      * <p>关于Y轴对称</p>
-     *
      * @param status
      * @return
      */
-    public boolean isYAxiSymmetry(long status) {
+    public boolean isYAxisSymmetry(long status) {
         for (int index = 0; status > 0; index++) {
             // 当前点有值
-            if ((status & BINARY_VALUE[index]) > 0) {
+            if ((status & (1L << index)) > 0) {
                 int symmetryX = -indexToX[index], symmetryY = -indexToZ[index], symmetryZ = -indexToY[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
-                if ((status & BINARY_VALUE[symmetryIndex]) > 0) {
+                if ((status & (1L << symmetryIndex)) > 0) {
                     // 对称点有值，移除检查的点、对称点
-                    status ^= BINARY_VALUE[index] | BINARY_VALUE[symmetryIndex];
+                    status ^= (1L << index) | (1L << symmetryIndex);
                 } else {
                     return false;
                 }
@@ -759,19 +733,18 @@ public class EvloverUtil {
 
     /**
      * <p>关于Z轴对称</p>
-     *
      * @param status
      * @return
      */
-    public boolean isZAxiSymmetry(long status) {
+    public boolean isZAxisSymmetry(long status) {
         for (int index = 0; status > 0; index++) {
             // 当前点有值
-            if ((status & BINARY_VALUE[index]) > 0) {
+            if ((status & (1L << index)) > 0) {
                 int symmetryX = -indexToZ[index], symmetryY = -indexToY[index], symmetryZ = -indexToX[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
-                if ((status & BINARY_VALUE[symmetryIndex]) > 0) {
+                if ((status & (1L << symmetryIndex)) > 0) {
                     // 对称点有值，移除检查的点、对称点
-                    status ^= BINARY_VALUE[index] | BINARY_VALUE[symmetryIndex];
+                    status ^= (1L << index) | (1L << symmetryIndex);
                 } else {
                     return false;
                 }
@@ -782,19 +755,18 @@ public class EvloverUtil {
 
     /**
      * <p>关于垂直于X轴对称</p>
-     *
      * @param status
      * @return
      */
-    public boolean isPerpendicularToXAxiSymmetry(long status) {
+    public boolean isPerpendicularToXAxisSymmetry(long status) {
         for (int index = 0; status > 0; index++) {
             // 当前点有值
-            if ((status & BINARY_VALUE[index]) > 0) {
+            if ((status & (1L << index)) > 0) {
                 int symmetryX = indexToY[index], symmetryY = indexToX[index], symmetryZ = indexToZ[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
-                if ((status & BINARY_VALUE[symmetryIndex]) > 0) {
+                if ((status & (1L << symmetryIndex)) > 0) {
                     // 对称点有值，移除检查的点、对称点
-                    status ^= BINARY_VALUE[index] | BINARY_VALUE[symmetryIndex];
+                    status ^= (1L << index) | (1L << symmetryIndex);
                 } else {
                     return false;
                 }
@@ -805,19 +777,18 @@ public class EvloverUtil {
 
     /**
      * <p>关于垂直于Y轴对称</p>
-     *
      * @param status
      * @return
      */
-    public boolean isPerpendicularToYAxiSymmetry(long status) {
+    public boolean isPerpendicularToYAxisSymmetry(long status) {
         for (int index = 0; status > 0; index++) {
             // 当前点有值
-            if ((status & BINARY_VALUE[index]) > 0) {
+            if ((status & (1L << index)) > 0) {
                 int symmetryX = indexToX[index], symmetryY = indexToZ[index], symmetryZ = indexToY[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
-                if ((status & BINARY_VALUE[symmetryIndex]) > 0) {
+                if ((status & (1L << symmetryIndex)) > 0) {
                     // 对称点有值，移除检查的点、对称点
-                    status ^= BINARY_VALUE[index] | BINARY_VALUE[symmetryIndex];
+                    status ^= (1L << index) | (1L << symmetryIndex);
                 } else {
                     return false;
                 }
@@ -828,19 +799,18 @@ public class EvloverUtil {
 
     /**
      * <p>关于垂直于Z轴对称</p>
-     *
      * @param status
      * @return
      */
-    public boolean isPerpendicularToZAxiSymmetry(long status) {
+    public boolean isPerpendicularToZAxisSymmetry(long status) {
         for (int index = 0; status > 0; index++) {
             // 当前点有值
-            if ((status & BINARY_VALUE[index]) > 0) {
+            if ((status & (1L << index)) > 0) {
                 int symmetryX = indexToZ[index], symmetryY = indexToY[index], symmetryZ = indexToX[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
-                if ((status & BINARY_VALUE[symmetryIndex]) > 0) {
+                if ((status & (1L << symmetryIndex)) > 0) {
                     // 对称点有值，移除检查的点、对称点
-                    status ^= BINARY_VALUE[index] | BINARY_VALUE[symmetryIndex];
+                    status ^= (1L << index) | (1L << symmetryIndex);
                 } else {
                     return false;
                 }
@@ -851,7 +821,6 @@ public class EvloverUtil {
 
     /**
      * <p>以六边形的中心顺时针旋转60°后的状态</p>
-     *
      * @param status
      * @return
      */
@@ -859,12 +828,12 @@ public class EvloverUtil {
         long rotationStatus = 0;
         for (int index = 0; status > 0; index++) {
             // 当前点有值
-            if ((status & BINARY_VALUE[index]) > 0) {
+            if ((status & (1L << index)) > 0) {
                 // 去除已检查点
-                status ^= BINARY_VALUE[index];
+                status ^= 1L << index;
                 int rotationX = -indexToZ[index], rotationY = -indexToX[index], rotationZ = -indexToY[index];
                 int rotationIndex = index(rotationX, rotationY, rotationZ);
-                rotationStatus |= BINARY_VALUE[rotationIndex];
+                rotationStatus |= 1L << rotationIndex;
             }
         }
         return rotationStatus;
@@ -872,7 +841,6 @@ public class EvloverUtil {
 
     /**
      * <p>以六边形的中心逆时针旋转60°后的状态</p>
-     *
      * @param status
      * @return
      */
@@ -880,12 +848,12 @@ public class EvloverUtil {
         long rotationStatus = 0;
         for (int index = 0; status > 0; index++) {
             // 当前点有值
-            if ((status & BINARY_VALUE[index]) > 0) {
+            if ((status & (1L << index)) > 0) {
                 // 去除已检查点
-                status ^= BINARY_VALUE[index];
+                status ^= 1L << index;
                 int rotationX = -indexToY[index], rotationY = -indexToZ[index], rotationZ = -indexToX[index];
                 int rotationIndex = index(rotationX, rotationY, rotationZ);
-                rotationStatus |= BINARY_VALUE[rotationIndex];
+                rotationStatus |= 1L << rotationIndex;
             }
         }
         return rotationStatus;

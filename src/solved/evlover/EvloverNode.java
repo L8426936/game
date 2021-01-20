@@ -7,9 +7,9 @@ public class EvloverNode {
      */
     private long status;
     /**
-     * <p>position（点击位置）：20~31位，x，y，z每四位二进制保存</p>
+     * <p>position（点击位置）：20~31位，x、y、z依次从高位到低位每四位二进制保存</p>
      * <p>action（操作）：18~19位，两位二进制保存</p>
-     * <p>symmetry（对称性）：11~17位，每一位二进制保存</p>
+     * <p>symmetry（对称性）：11~17位，垂直于Z轴对称、垂直于Y轴对称、垂直于X轴对称、Z轴对称、Y轴对称、X轴对称、原点对称依次从高位到低位每一位二进制保存</p>
      */
     private int positionActionSymmetry;
 

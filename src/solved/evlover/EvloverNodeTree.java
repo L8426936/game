@@ -1,11 +1,8 @@
 package solved.evlover;
 
 import solved.util.AVLTree;
-import solved.util.Queue;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class EvloverNodeTree {
 
@@ -37,7 +34,6 @@ public class EvloverNodeTree {
 
     /**
      * 构建以status为根节点的搜索树
-     *
      * @param status
      * @return
      */
@@ -77,7 +73,7 @@ public class EvloverNodeTree {
                     }
                 }
             }
-            if (nextTreeLayer.size() > 0) {
+            if (!nextTreeLayer.isEmpty()) {
                 tree.add(nextTreeLayer);
             }
         }
@@ -87,7 +83,6 @@ public class EvloverNodeTree {
     /**
      * <p>广度优先搜索</p>
      * <p>BFS: breadth first search</p>
-     *
      * @param startStatus
      * @param endStatus
      * @return
@@ -97,7 +92,7 @@ public class EvloverNodeTree {
         long endLongStatus = EvloverUtil.charsStatusToLongStatus(endStatus);
 
         if (startLongStatus != endLongStatus && EvloverUtil.bitCount(startLongStatus) == EvloverUtil.bitCount(endLongStatus)) {
-            Queue<EvloverNode> queue = new Queue<>();
+            Queue<EvloverNode> queue = new LinkedList<>();
             AVLTree<EvloverNode> avlTree = new AVLTree<>();
 
             EvloverNode rootEvloverNode = new EvloverNode();
@@ -141,7 +136,6 @@ public class EvloverNodeTree {
     /**
      * <p>广度优先搜索，以每个节点和结束节点的共同对称去除对称节点</p>
      * <p>BFS: breadth first search</p>
-     *
      * @param startStatus
      * @param endStatus
      * @return
@@ -151,7 +145,7 @@ public class EvloverNodeTree {
         long endLongStatus = EvloverUtil.charsStatusToLongStatus(endStatus);
 
         if (startLongStatus != endLongStatus && EvloverUtil.bitCount(startLongStatus) == EvloverUtil.bitCount(endLongStatus)) {
-            Queue<EvloverNode> queue = new Queue<>();
+            Queue<EvloverNode> queue = new LinkedList<>();
             AVLTree<EvloverNode> avlTree = new AVLTree<>();
 
             EvloverNode rootEvloverNode = new EvloverNode();
@@ -173,7 +167,7 @@ public class EvloverNodeTree {
                     int x = xClickPosition[i], y = yClickPosition[i], z = zClickPosition[i];
                     int index = evloverUtil.index(x, y, z);
                     // 当前位置没有被点击过
-                    if ((logClickIndex & EvloverUtil.BINARY_VALUE[index]) == 0) {
+                    if ((logClickIndex & (1L << index)) == 0) {
                         for (int action : actions) {
                             long childStatus = nextStatus(parentStatus, x, y, z, action);
                             if (avlTree.get(childStatus) == null) {
@@ -205,14 +199,14 @@ public class EvloverNodeTree {
 
                             }
                         }
-                        logClickIndex |= EvloverUtil.BINARY_VALUE[index];
+                        logClickIndex |= 1L << index;
                         for (int symmetryType = 1; symmetryType <= allCommonSymmetryType; symmetryType <<= 1) {
                             // 记录对称的点击位置
                             int symmetryX = EvloverUtil.symmetryX(x, y, z, symmetryType & allCommonSymmetryType);
                             int symmetryY = EvloverUtil.symmetryY(x, y, z, symmetryType & allCommonSymmetryType);
                             int symmetryZ = EvloverUtil.symmetryZ(x, y, z, symmetryType & allCommonSymmetryType);
                             int symmetryIndex = evloverUtil.index(symmetryX, symmetryY, symmetryZ);
-                            logClickIndex |= EvloverUtil.BINARY_VALUE[symmetryIndex];
+                            logClickIndex |= 1L << symmetryIndex;
                         }
                     }
                 }
@@ -224,7 +218,6 @@ public class EvloverNodeTree {
     /**
      * <p>双向广度优先搜索</p>
      * <p>BBFS: bidirectional breadth first search</p>
-     *
      * @param startStatus
      * @param endStatus
      * @return
@@ -234,8 +227,8 @@ public class EvloverNodeTree {
         long endLongStatus = EvloverUtil.charsStatusToLongStatus(endStatus);
 
         if (startLongStatus != endLongStatus && EvloverUtil.bitCount(startLongStatus) == EvloverUtil.bitCount(endLongStatus)) {
-            Queue<EvloverNode> startQueue = new Queue<>();
-            Queue<EvloverNode> endQueue = new Queue<>();
+            Queue<EvloverNode> startQueue = new LinkedList<>();
+            Queue<EvloverNode> endQueue = new LinkedList<>();
             AVLTree<EvloverNode> startAVLTree = new AVLTree<>();
             AVLTree<EvloverNode> endAVLTree = new AVLTree<>();
 
@@ -309,7 +302,6 @@ public class EvloverNodeTree {
     /**
      * <p>双向广度优先搜索，以每个节点和目标节点的共同对称去除对称节点</p>
      * <p>BBFS: bidirectional breadth first search</p>
-     *
      * @param startStatus
      * @param endStatus
      * @return
@@ -319,8 +311,8 @@ public class EvloverNodeTree {
         long endLongStatus = EvloverUtil.charsStatusToLongStatus(endStatus);
 
         if (startLongStatus != endLongStatus && EvloverUtil.bitCount(startLongStatus) == EvloverUtil.bitCount(endLongStatus)) {
-            Queue<EvloverNode> startQueue = new Queue<>();
-            Queue<EvloverNode> endQueue = new Queue<>();
+            Queue<EvloverNode> startQueue = new LinkedList<>();
+            Queue<EvloverNode> endQueue = new LinkedList<>();
             AVLTree<EvloverNode> startAVLTree = new AVLTree<>();
             AVLTree<EvloverNode> endAVLTree = new AVLTree<>();
 
@@ -374,7 +366,7 @@ public class EvloverNodeTree {
                         int x = xClickPosition[k], y = yClickPosition[k], z = zClickPosition[k];
                         int index = evloverUtil.index(x, y, z);
                         // 当前位置没有被点击过
-                        if ((logClickIndex & EvloverUtil.BINARY_VALUE[index]) == 0) {
+                        if ((logClickIndex & (1L << index)) == 0) {
                             for (int action : actions) {
                                 long childStatus = nextStatus(parentStatus, x, y, z, action);
                                 if (avlTree.get(childStatus) == null) {
@@ -406,14 +398,14 @@ public class EvloverNodeTree {
                                 }
                             }
                         }
-                        logClickIndex |= EvloverUtil.BINARY_VALUE[index];
+                        logClickIndex |= 1L << index;
                         for (int symmetryType = 1; symmetryType <= allCommonSymmetryType; symmetryType <<= 1) {
                             // 记录对称的点击位置
                             int symmetryX = EvloverUtil.symmetryX(x, y, z, symmetryType & allCommonSymmetryType);
                             int symmetryY = EvloverUtil.symmetryY(x, y, z, symmetryType & allCommonSymmetryType);
                             int symmetryZ = EvloverUtil.symmetryZ(x, y, z, symmetryType & allCommonSymmetryType);
                             int symmetryIndex = evloverUtil.index(symmetryX, symmetryY, symmetryZ);
-                            logClickIndex |= EvloverUtil.BINARY_VALUE[symmetryIndex];
+                            logClickIndex |= 1L << symmetryIndex;
                         }
                     }
                 }
@@ -430,62 +422,85 @@ public class EvloverNodeTree {
      * @param action
      */
     private long nextStatus(long parentStatus, int x, int y, int z, int action) {
+        /*
+         *  0 1
+         * 2 3 4
+         *  5 6
+         */
         long childStatus = 0;
-        for (int xStart = x - 1, xEnd = x + 1; xStart <= xEnd; xStart++) {
-            for (int yStart = y - 1, yEnd = y + 1; yStart <= yEnd; yStart++) {
-                for (int zStart = z - 1, zEnd = z + 1; zStart <= zEnd; zStart++) {
-                    if (xStart + yStart + zStart == 0) {
-                        int index = evloverUtil.index(xStart, yStart, zStart);
-                        long value = parentStatus & EvloverUtil.BINARY_VALUE[index];
-                        if (value > 0) {
-                            int swapX = x, swapY = y, swapZ = z;
-                            switch (action) {
-                                case EvloverUtil.P:
-                                    swapX = (x << 1) - xStart;
-                                    swapY = (y << 1) - yStart;
-                                    swapZ = (z << 1) - zStart;
-                                    break;
-                                case EvloverUtil.C:
-                                    swapX = -(y + zStart);
-                                    swapY = -(z + xStart);
-                                    swapZ = -(x + yStart);
-                                    break;
-                                case EvloverUtil.A:
-                                    swapX = -(z + yStart);
-                                    swapY = -(x + zStart);
-                                    swapZ = -(y + xStart);
-                                    break;
-                                default:
-                            }
-                            index = evloverUtil.index(swapX, swapY, swapZ);
-                            childStatus |= EvloverUtil.BINARY_VALUE[index];
-                            parentStatus ^= value;
-                        }
-                    }
-                }
-            }
+        int index = -1;
+        switch (action) {
+            case EvloverUtil.P:
+                index = evloverUtil.index(x, y + 1, z - 1);
+                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x, y - 1, z + 1);
+                index = evloverUtil.index(x + 1, y, z - 1);
+                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x - 1, y, z + 1);
+                index = evloverUtil.index(x - 1, y + 1, z);
+                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x + 1, y - 1, z);
+                index = evloverUtil.index(x + 1, y - 1, z);
+                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x - 1, y + 1, z);
+                index = evloverUtil.index(x - 1, y, z + 1);
+                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x + 1, y, z - 1);
+                index = evloverUtil.index(x, y - 1, z + 1);
+                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x, y + 1, z - 1);
+                break;
+            case EvloverUtil.C:
+                index = evloverUtil.index(x, y + 1, z - 1);
+                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x + 1, y, z - 1);
+                index = evloverUtil.index(x + 1, y, z - 1);
+                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x + 1, y - 1, z);
+                index = evloverUtil.index(x - 1, y + 1, z);
+                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x, y + 1, z - 1);
+                index = evloverUtil.index(x + 1, y - 1, z);
+                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x, y - 1, z + 1);
+                index = evloverUtil.index(x - 1, y, z + 1);
+                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x - 1, y + 1, z);
+                index = evloverUtil.index(x, y - 1, z + 1);
+                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x - 1, y, z + 1);
+                break;
+            case EvloverUtil.A:
+                index = evloverUtil.index(x, y + 1, z - 1);
+                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x - 1, y + 1, z);
+                index = evloverUtil.index(x + 1, y, z - 1);
+                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x, y + 1, z - 1);
+                index = evloverUtil.index(x - 1, y + 1, z);
+                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x - 1, y, z + 1);
+                index = evloverUtil.index(x + 1, y - 1, z);
+                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x + 1, y, z - 1);
+                index = evloverUtil.index(x - 1, y, z + 1);
+                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x, y - 1, z + 1);
+                index = evloverUtil.index(x, y - 1, z + 1);
+                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x + 1, y - 1, z);
+                break;
+            default:
         }
+        parentStatus ^= parentStatus & (1L << evloverUtil.index(x, y + 1, z - 1));
+        parentStatus ^= parentStatus & (1L << evloverUtil.index(x + 1, y, z - 1));
+        parentStatus ^= parentStatus & (1L << evloverUtil.index(x - 1, y + 1, z));
+        parentStatus ^= parentStatus & (1L << evloverUtil.index(x + 1, y - 1, z));
+        parentStatus ^= parentStatus & (1L << evloverUtil.index(x - 1, y, z + 1));
+        parentStatus ^= parentStatus & (1L << evloverUtil.index(x, y - 1, z + 1));
         return childStatus | parentStatus;
     }
 
-    private List<EvloverNode> BFSBuildPassPath(EvloverNode EvloverNode) {
+    private List<EvloverNode> BFSBuildPassPath(EvloverNode evloverNode) {
         List<EvloverNode> passPath = new ArrayList<>();
-        while (EvloverNode != null) {
-            passPath.add(0, EvloverNode);
-            EvloverNode = EvloverNode.getParent();
+        while (evloverNode != null) {
+            passPath.add(0, evloverNode);
+            evloverNode = evloverNode.getParent();
         }
         return rebuildPassPath(passPath);
     }
 
-    private List<EvloverNode> BBFSBuildPassPath(long status, AVLTree<EvloverNode> startAVLTree, AVLTree<EvloverNode> endAVLTree) {
+    private List<EvloverNode> BBFSBuildPassPath(long junctionStatus, AVLTree<EvloverNode> startAVLTree, AVLTree<EvloverNode> endAVLTree) {
         List<EvloverNode> passPath = new ArrayList<>();
 
-        EvloverNode junctionEvloverNode = startAVLTree.get(status);
+        EvloverNode junctionEvloverNode = startAVLTree.get(junctionStatus);
         while (junctionEvloverNode != null) {
             passPath.add(0, junctionEvloverNode);
             junctionEvloverNode = junctionEvloverNode.getParent();
         }
-        junctionEvloverNode = endAVLTree.get(status);
+        junctionEvloverNode = endAVLTree.get(junctionStatus);
         while (junctionEvloverNode.getParent() != null) {
             EvloverNode parentEvloverNode = junctionEvloverNode.getParent();
             junctionEvloverNode.setStatus(parentEvloverNode.getStatus());
@@ -515,13 +530,12 @@ public class EvloverNodeTree {
 
     /**
      * <p>打印通关路径</p>
-     *
      * @param passPath
      */
     public void printlnPassPath(List<EvloverNode> passPath) {
-        for (int i = 0; i < passPath.size(); i++) {
-            EvloverNode EvloverNode = passPath.get(i);
-            char[] status = EvloverUtil.longStatusToCharsStatus(layer, EvloverNode.getStatus());
+        for (int i = 0; i < passPath.size() - 1; i++) {
+            EvloverNode evloverNode = passPath.get(i);
+            char[] status = EvloverUtil.longStatusToCharsStatus(layer, evloverNode.getStatus());
             for (int index = 0, z = -layer; z <= layer; z++) {
                 for (int col = Math.abs(z); col > 0; col--) {
                     System.out.print(' ');
@@ -531,19 +545,23 @@ public class EvloverNodeTree {
                  * h(z) = 2 * layer + 1 - |z|；-layer <= z <= layer
                  */
                 for (int col = 2 * layer + 1 - Math.abs(z); col > 0; col--) {
-                    if (index == evloverUtil.index(EvloverNode.getX(), EvloverNode.getY(), EvloverNode.getZ())) {
-                        System.out.format("- ");
+                    if (index == evloverUtil.index(evloverNode.getX(), evloverNode.getY(), evloverNode.getZ())) {
+                        System.out.print('-');
                     } else if (status[index] != '0') {
-                        System.out.format("● ");
+                        System.out.print('●');
                     } else {
-                        System.out.format("○ ");
+                        System.out.print('○');
+                    }
+                    if (col > 1) {
+                        System.out.print(' ');
                     }
                     index++;
                 }
                 System.out.println();
             }
-            System.out.format("x:%d y:%d z:%d action:%c%n", EvloverNode.getX(), EvloverNode.getY(), EvloverNode.getZ(), EvloverUtil.actionIntToChar(EvloverNode.getAction()));
+            System.out.format("x:%d y:%d z:%d action:%c%n", evloverNode.getX(), evloverNode.getY(), evloverNode.getZ(), EvloverUtil.actionIntToChar(evloverNode.getAction()));
         }
+        EvloverUtil.printlnStatus(EvloverUtil.longStatusToCharsStatus(layer, passPath.get(passPath.size() - 1).getStatus()));
     }
 
 }
