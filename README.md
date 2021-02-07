@@ -7,7 +7,7 @@
 > 微信小程序最强连一连，程序自动识别方块分布，触摸滑动方块通关
 
 [六边形消消乐](src/solved/hexagoneliminate)
-> 计算最佳摆放方式，亲测得分200000+，太费时间，没有继续玩了；需要安装opencv4.5.1
+> 计算最佳摆放方式，需要安装opencv4.5.1；[HexagonEliminatePlayer.java](src/solved/hexagoneliminate/HexagonEliminatePlayer.java)的move方法不同手机并不通用
 
 [华容道，klotski](src/solved/klotski)
 > 微信小程序华容道，程序搜索最优解，自动识别方块分布，触摸滑动方块通关，支持移动同一方块为一步，直线移动为一步，移动一格为一步三种模式

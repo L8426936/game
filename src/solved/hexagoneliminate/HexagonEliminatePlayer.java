@@ -11,7 +11,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Random;
 
 public class HexagonEliminatePlayer {
 
@@ -36,28 +35,46 @@ public class HexagonEliminatePlayer {
     }
 
     public static void play() {
+        try {
+            screenshot();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         String winname = "按指示完成操作后，按下任意键";
-        screenshot();
         Rect[] statusRect = analysisStatusRect();
         while (true) {
-            long status = analysisStatus(statusRect);
-            ShapeType[] shapeTypes = analysisShape();
-            HexagonEliminateTree.Move move = HexagonEliminateTree.bestMove(status, shapeTypes);
-            if (move != null) {
-                HexagonEliminateUtil.printlnStatus(HexagonEliminateUtil.longToArray(status));
-                System.out.println();
+            try {
+                long status = analysisStatus(statusRect);
+                ShapeType[] shapeTypes = analysisShape();
+                HexagonEliminateTree.Move move = HexagonEliminateTree.bestMove(status, shapeTypes);
+                if (move != null) {
+                    HexagonEliminateUtil.printlnStatus(HexagonEliminateUtil.longToArray(status));
+                    System.out.println();
 
-                Mat image = Imgcodecs.imread(DATA_PATH + "hexagoneliminate.png");
+                    Mat image = Imgcodecs.imread(DATA_PATH + "hexagoneliminate.png");
 
-                drawShapePosition(image, statusRect, move.getShapePosition());
-                Imgproc.rectangle(image, shapeTypes[move.getShapeTypeIndex()].rect, new Scalar(0, 0, 255), Imgproc.LINE_4);
+                    Rect destRect = destRect(image, statusRect, move.getShapePosition());
+                    Imgproc.rectangle(image, shapeTypes[move.getShapeTypeIndex()].rect, new Scalar(0, 0, 255), Imgproc.LINE_4);
 
-                Imgproc.resize(image, image, new Size(image.width() * 0.4, image.height() * 0.4));
-                HighGui.imshow(winname, image);
-                HighGui.waitKey();
-                HighGui.windows.get(winname).alreadyUsed = false;
+                    Imgproc.resize(image, image, new Size(image.width() * 0.4, image.height() * 0.4));
+                    HighGui.imshow(winname, image);
+
+                    //////////////////// 不使用move方法
+                    // HighGui.waitKey();
+                    ////////////////////
+
+                    //////////////////////// 使用move方法
+                    HighGui.waitKey(1);
+                    move(move.getShapeTypeIndex(), shapeTypes[move.getShapeTypeIndex()].rect, destRect, (int) (image.height() / 0.4));
+                    Thread.sleep(750);
+                    ////////////////////////
+
+                    HighGui.windows.get(winname).alreadyUsed = false;
+                }
+                screenshot();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            screenshot();
         }
     }
 
@@ -67,24 +84,62 @@ public class HexagonEliminatePlayer {
      * @param statusRect
      * @param shapePosition
      */
-    private static void drawShapePosition(Mat image, Rect[] statusRect, long shapePosition) {
+    private static Rect destRect(Mat image, Rect[] statusRect, long shapePosition) {
+        int leftMargin = Integer.MAX_VALUE, rightMargin = Integer.MIN_VALUE, topMargin = Integer.MAX_VALUE, bottomMargin = Integer.MIN_VALUE;
         Scalar green = new Scalar(0, 255, 0);
         for (int index = 0; shapePosition > 0; index++) {
             if ((shapePosition & (1L << index)) > 0) {
                 shapePosition ^= 1L << index;
-                Imgproc.rectangle(image, statusRect[index], green, Imgproc.LINE_4);
+                Rect rect = statusRect[index];
+                if (rect.x < leftMargin) {
+                    leftMargin = rect.x;
+                }
+                if (rect.x + rect.width > rightMargin) {
+                    rightMargin = rect.x + rect.width;
+                }
+                if (rect.y < topMargin) {
+                    topMargin = rect.y;
+                }
+                if (rect.y + rect.height > bottomMargin) {
+                    bottomMargin = rect.y + rect.height;
+                }
+                Imgproc.rectangle(image, rect, green, Imgproc.LINE_4);
             }
         }
+        return  new Rect(leftMargin, topMargin, rightMargin - leftMargin, bottomMargin - topMargin);
+    }
+
+    private static void move(int shapeTypeIndex, Rect source, Rect dest, int height) throws Exception {
+        StringBuilder builder = new StringBuilder();
+        builder.append("sendevent /dev/input/event3 3 57 0\n");
+        builder.append(String.format("sendevent /dev/input/event3 3 53 %d%n", source.x + (source.width >> 1)));
+        builder.append(String.format("sendevent /dev/input/event3 3 54 %d%n", source.y + (source.height >> 1)));
+        builder.append("sleep 0.01s\n");
+        builder.append("sendevent /dev/input/event3 0 0 0\n");
+        builder.append(String.format("sendevent /dev/input/event3 3 53 %d%n", source.x + (source.width >> 1) + ((shapeTypeIndex - 1) * (source.width / 8))));
+        builder.append(String.format("sendevent /dev/input/event3 3 54 %d%n", source.y + (source.height >> 1) + (height - source.y - source.height)));
+        builder.append("sendevent /dev/input/event3 0 0 0");
+        Files.write(Paths.get(DATA_PATH, "commands.sh"), builder.toString().getBytes());
+        runtime.exec("adb push " + DATA_PATH + "commands.sh /mnt/sdcard/commands.sh").waitFor();
+        runtime.exec("adb shell sh /mnt/sdcard/commands.sh").waitFor();
+        builder.delete(0, builder.length());
+
+        screenshot();
+        Rect floatRect = analysisShape()[shapeTypeIndex].rect;
+        builder.append(String.format("sendevent /dev/input/event3 3 53 %d%n", dest.x + (dest.width >> 1)));
+        builder.append(String.format("sendevent /dev/input/event3 3 54 %d%n", (dest.y + (dest.height >> 1)) + ((source.y + (source.height >> 1) + (height - source.y - source.height)) - (floatRect.y + (floatRect.height >> 1)))));
+        builder.append("sendevent /dev/input/event3 0 0 0\n");
+        builder.append("sendevent /dev/input/event3 3 57 1\n");
+        builder.append("sendevent /dev/input/event3 0 0 0");
+        Files.write(Paths.get(DATA_PATH, "commands.sh"), builder.toString().getBytes());
+        runtime.exec("adb push " + DATA_PATH + "commands.sh /mnt/sdcard/commands.sh").waitFor();
+        runtime.exec("adb shell sh /mnt/sdcard/commands.sh").waitFor();
     }
 
     // 截屏到电脑
-    private static void screenshot() {
-        try {
-            runtime.exec("adb shell screencap /sdcard/hexagoneliminate.png").waitFor();
-            runtime.exec("adb pull /sdcard/hexagoneliminate.png " + DATA_PATH).waitFor();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    private static void screenshot() throws Exception {
+        runtime.exec("adb shell screencap /sdcard/hexagoneliminate.png").waitFor();
+        runtime.exec("adb pull /sdcard/hexagoneliminate.png " + DATA_PATH).waitFor();
     }
 
     /**
@@ -214,7 +269,7 @@ public class HexagonEliminatePlayer {
             ShapeType firstShapeType = shapes[i];
             for (int j = i + 1; j < shapes.length; j++) {
                 ShapeType nShapeType = shapes[j];
-                if (firstShapeType.rect.x > nShapeType.rect.x) {
+                if (firstShapeType.rect.x < nShapeType.rect.x) {
                     shapes[i] = nShapeType;
                     shapes[j] = firstShapeType;
                     firstShapeType = nShapeType;
