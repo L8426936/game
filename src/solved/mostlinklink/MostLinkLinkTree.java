@@ -1,12 +1,12 @@
 package solved.mostlinklink;
 
-public class MostLinkLinkNodeTree {
+public class MostLinkLinkTree {
 
 	private char[][] status;
 	private MostLinkLinkNode[] nodes;
 	private int count, nodesIndex, sum; // count方格数量，sum搜索的节点数量
 	
-	public MostLinkLinkNodeTree(GameInfo gameInfo) {
+	public MostLinkLinkTree(GameInfo gameInfo) {
 		this.status = gameInfo.getStatus();
 		this.count = gameInfo.getCount();
 		this.nodes = new MostLinkLinkNode[count];
@@ -28,7 +28,7 @@ public class MostLinkLinkNodeTree {
 				int direction = parent.getDirection();
 				while (true) {
 					if (nodesIndex > 0 && parent.getDirectionCount() >= directions.length) { // 节点改变方向次数大于等于4次，即4个方向均尝试过，回退一个节点
-						status[parent.getRow()][parent.getCol()] = MostLinkLinkUtil.EMPTY;
+						status[parent.getRow()][parent.getCol()] = MostLinkLinkPlayer.EMPTY;
 						count++;
 						parent = nodes[--nodesIndex]; // 回退一个节点
 						parent.setDirection((parent.getDirection() + 1) % directions.length); // 回退的节点改变方向
@@ -57,7 +57,7 @@ public class MostLinkLinkNodeTree {
 	private MostLinkLinkNode nextStep(MostLinkLinkNode parent, int direction) {
 		int childRow = parent.getRow() + directions[direction][0];
 		int childCol = parent.getCol() + directions[direction][1];
-		if (childRow < 0 || childRow >= status.length || childCol < 0 || childCol >= status[0].length || status[childRow][childCol] != MostLinkLinkUtil.EMPTY) {
+		if (childRow < 0 || childRow >= status.length || childCol < 0 || childCol >= status[0].length || status[childRow][childCol] != MostLinkLinkPlayer.EMPTY) {
 			return null;
 		}
 		MostLinkLinkNode child = nodes[nodesIndex + 1]; // 之前丢弃的节点重新利用，减少new的次数
@@ -69,7 +69,7 @@ public class MostLinkLinkNodeTree {
 		child.setRow(childRow);
 		child.setCol(childCol);
 		child.setDirection(direction);
-		status[childRow][childCol] = MostLinkLinkUtil.EXIST;
+		status[childRow][childCol] = MostLinkLinkPlayer.EXIST;
 		return child;
 	}
 }

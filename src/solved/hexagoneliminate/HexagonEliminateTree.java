@@ -221,7 +221,7 @@ public class HexagonEliminateTree {
         move.shapeTypeIndex = best.getShapeTypeIndex();
         move.score += best.getScore();
         move.status += best.getStatus();
-        System.out.println("一共有" + count + "种摆法方式");
+        System.out.println("一共有" + count + "种摆法");
         return best.getParent() != null ? move : null;
     }
 

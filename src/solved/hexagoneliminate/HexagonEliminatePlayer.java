@@ -34,7 +34,7 @@ public class HexagonEliminatePlayer {
         }
     }
 
-    public static void play() {
+    public static void autoPlay() {
         try {
             screenshot();
         } catch (Exception e) {
@@ -46,30 +46,32 @@ public class HexagonEliminatePlayer {
             try {
                 long status = analysisStatus(statusRect);
                 ShapeType[] shapeTypes = analysisShape();
-                HexagonEliminateTree.Move move = HexagonEliminateTree.bestMove(status, shapeTypes);
-                if (move != null) {
-                    HexagonEliminateUtil.printlnStatus(HexagonEliminateUtil.longToArray(status));
-                    System.out.println();
+                if (shapeTypes != null) {
+                    HexagonEliminateTree.Move move = HexagonEliminateTree.bestMove(status, shapeTypes);
+                    if (move != null) {
+                        HexagonEliminateUtil.printlnStatus(HexagonEliminateUtil.longToArray(status));
+                        System.out.println();
 
-                    Mat image = Imgcodecs.imread(DATA_PATH + "hexagoneliminate.png");
+                        Mat image = Imgcodecs.imread(DATA_PATH + "hexagoneliminate.png");
 
-                    Rect destRect = destRect(image, statusRect, move.getShapePosition());
-                    Imgproc.rectangle(image, shapeTypes[move.getShapeTypeIndex()].rect, new Scalar(0, 0, 255), Imgproc.LINE_4);
+                        Rect destRect = destRect(image, statusRect, move.getShapePosition());
+                        Imgproc.rectangle(image, shapeTypes[move.getShapeTypeIndex()].rect, new Scalar(0, 0, 255), Imgproc.LINE_4);
 
-                    Imgproc.resize(image, image, new Size(image.width() * 0.4, image.height() * 0.4));
-                    HighGui.imshow(winname, image);
+                        Imgproc.resize(image, image, new Size(image.width() * 0.4, image.height() * 0.4));
+                        HighGui.imshow(winname, image);
 
-                    //////////////////// 不使用move方法
-                    // HighGui.waitKey();
-                    ////////////////////
+                        //////////////////// 不使用move方法
+                        // HighGui.waitKey();
+                        ////////////////////
 
-                    //////////////////////// 使用move方法
-                    HighGui.waitKey(1);
-                    move(move.getShapeTypeIndex(), shapeTypes[move.getShapeTypeIndex()].rect, destRect, (int) (image.height() / 0.4));
-                    Thread.sleep(750);
-                    ////////////////////////
+                        //////////////////////// 使用move方法
+                        HighGui.waitKey(1);
+                        move(move.getShapeTypeIndex(), shapeTypes[move.getShapeTypeIndex()].rect, destRect, (int) (image.height() / 0.4));
+                        Thread.sleep(750);
+                        ////////////////////////
 
-                    HighGui.windows.get(winname).alreadyUsed = false;
+                        HighGui.windows.get(winname).alreadyUsed = false;
+                    }
                 }
                 screenshot();
             } catch (Exception e) {
@@ -111,6 +113,7 @@ public class HexagonEliminatePlayer {
 
     private static void move(int shapeTypeIndex, Rect source, Rect dest, int height) throws Exception {
         StringBuilder builder = new StringBuilder();
+        builder.append("sendevent /dev/input/event3 3 47 0\n");
         builder.append("sendevent /dev/input/event3 3 57 0\n");
         builder.append(String.format("sendevent /dev/input/event3 3 53 %d%n", source.x + (source.width >> 1)));
         builder.append(String.format("sendevent /dev/input/event3 3 54 %d%n", source.y + (source.height >> 1)));
@@ -257,6 +260,9 @@ public class HexagonEliminatePlayer {
 
         List<MatOfPoint> contours = new ArrayList<>();
         Imgproc.findContours(image, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+        if (contours.size() < 3) {
+            return null;
+        }
         ShapeType[] shapes = new ShapeType[3];
         for (int i = 0; i < 3; i++) {
             Rect rect = Imgproc.boundingRect(contours.get(i));

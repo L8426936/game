@@ -2,8 +2,8 @@ package solved.klotski;
 
 public class KlotskiNode {
     private KlotskiNode parent;
-    private int[] status;
-    private int src, dest;
+    private long status;
+    private int srcDest;
 
     public KlotskiNode getParent() {
         return parent;
@@ -13,28 +13,43 @@ public class KlotskiNode {
         this.parent = parent;
     }
 
-    public int[] getStatus() {
+    public long getStatus() {
         return status;
     }
 
-    public void setStatus(int[] status) {
+    public void setStatus(long status) {
         this.status = status;
     }
 
+    public int getSrcRow() {
+        return getSrc() / 12;
+    }
+
+    public int getSrcCol() {
+        return (getSrc() % 12) / 3;
+    }
+
+    public int getDestRow() {
+        return getDest() / 12;
+    }
+
+    public int getDestCol() {
+        return (getDest() % 12) / 3;
+    }
+
     public int getSrc() {
-        return src;
+        return srcDest >>> 16;
     }
 
     public void setSrc(int src) {
-        this.src = src;
+        srcDest = (srcDest & 0XFFFF) | (src << 16);
     }
 
     public int getDest() {
-        return dest;
+        return srcDest & 0XFFFF;
     }
 
     public void setDest(int dest) {
-        this.dest = dest;
+        srcDest = (srcDest & 0XFFFF0000) | dest;
     }
-
 }

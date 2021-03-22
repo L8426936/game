@@ -1,19 +1,18 @@
-# game
-游戏，微信小程序
+# 游戏
 
-更多详细介绍：[匿名的博客](https://blog.csdn.net/lcl1997 "匿名的博客")
+[匿名的博客](https://blog.csdn.net/lcl1997)
 
 [最强连一连](src/solved/mostlinklink)
-> 微信小程序最强连一连，程序自动识别方块分布，触摸滑动方块通关
+> 微信小程序最强连一连，自动识别方块分布
 
 [六边形消消乐](src/solved/hexagoneliminate)
 > 计算最佳摆放方式，需要安装opencv4.5.1；[HexagonEliminatePlayer.java](src/solved/hexagoneliminate/HexagonEliminatePlayer.java)的move方法不同手机并不通用
 
 [华容道，klotski](src/solved/klotski)
-> 微信小程序华容道，程序搜索最优解，自动识别方块分布，触摸滑动方块通关，支持移动同一方块为一步，直线移动为一步，移动一格为一步三种模式
+> 微信小程序经典三国华容道，自动识别布局，搜索最优解，支持移动同一方块为一步，直线移动为一步，移动一格为一步三种模式；需要安装opencv4.5.1
 
 [墨盘，evlover](src/solved/evlover)
-> 墨盘，双向广度优先搜索，以下10关解法均比官方提示步数快一步
+> 墨盘，以下10关解法均比官方提示步数快一步
 
 | 关卡 | 关卡 | 关卡 | 关卡 | 关卡 |
 |:----:|:----:|:----:|:----:|:----:|

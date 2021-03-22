@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class MostLinkLinkUtil {
+public class MostLinkLinkPlayer {
 
     public static final char BAN = ' ', EMPTY = '□', EXIST = '■';
     /**
@@ -67,9 +67,9 @@ public class MostLinkLinkUtil {
                 if (gameInfo != null) {
                     System.out.format("图片分析耗时:%d毫秒%n", System.currentTimeMillis() - timestamp);
                     printStatus(gameInfo.getStatus());
-                    MostLinkLinkNodeTree nodeTree = new MostLinkLinkNodeTree(gameInfo);
+                    MostLinkLinkTree mostLinkLinkTree = new MostLinkLinkTree(gameInfo);
                     timestamp = System.currentTimeMillis();
-                    MostLinkLinkNode[] nodes = nodeTree.DFS();
+                    MostLinkLinkNode[] nodes = mostLinkLinkTree.DFS();
                     if (nodes != null) {
                         System.out.format("搜索耗时:%d毫秒%n", System.currentTimeMillis() - timestamp);
                         drawPassPath(nodes, gameInfo);

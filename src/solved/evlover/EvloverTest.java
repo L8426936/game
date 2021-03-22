@@ -35,17 +35,17 @@ public class EvloverTest {
     private static void playRandomStatus(int layer, int count) {
         char[] startStatus = EvloverUtil.randomStatus(layer, count);
         char[] endStatus = EvloverUtil.randomStatus(layer, count);
-        EvloverNodeTree evloverNodeTree = new EvloverNodeTree(layer);
+        EvloverTree evloverTree = new EvloverTree(layer);
         long startTime = System.currentTimeMillis();
-        List<EvloverNode> passPath = evloverNodeTree.BBFSRemoveSymmetry(startStatus, endStatus);
-        evloverNodeTree.printlnPassPath(passPath);
+        List<EvloverNode> passPath = evloverTree.BBFSRemoveSymmetry(startStatus, endStatus);
+        evloverTree.printlnPassPath(passPath);
         System.out.format("搜索耗时:%d毫秒 步数:%d%n", System.currentTimeMillis() - startTime, passPath.size() - 1);
     }
 
     private static void maxStep(char[] status) {
         int layer = EvloverUtil.layer(status);
-        EvloverNodeTree evloverNodeTree = new EvloverNodeTree(layer);
-        List<List<EvloverNode>> tree = evloverNodeTree.buildTree(status);
+        EvloverTree evloverTree = new EvloverTree(layer);
+        List<List<EvloverNode>> tree = evloverTree.buildTree(status);
         System.out.format("maxStep:%d%n", tree.size() - 1);
     }
 
@@ -53,7 +53,7 @@ public class EvloverTest {
         EvloverUtil evloverUtil = new EvloverUtil(layer);
         List<char[]> allUniqueStatus = evloverUtil.allUniqueStatus(count);
         System.out.format("allUniqueStatusSum:%d%n", allUniqueStatus.size());
-        EvloverNodeTree evloverNodeTree = new EvloverNodeTree(layer);
+        EvloverTree evloverTree = new EvloverTree(layer);
         ExecutorService executorService = Executors.newFixedThreadPool(4);
         AtomicInteger finishStatusCount = new AtomicInteger();
         ConcurrentLinkedQueue<Integer> steps = new ConcurrentLinkedQueue<>();
@@ -62,7 +62,7 @@ public class EvloverTest {
                 @Override
                 public void run() {
                     long currentTimeMillis = System.currentTimeMillis();
-                    List<List<EvloverNode>> tree = evloverNodeTree.buildTree(status);
+                    List<List<EvloverNode>> tree = evloverTree.buildTree(status);
                     steps.offer(tree.size() - 1);
                     System.out.format("i:%d status:%s step:%d time:%dms%n", finishStatusCount.getAndIncrement(), String.valueOf(status), tree.size() - 1, System.currentTimeMillis() - currentTimeMillis);
                 }

@@ -4,13 +4,13 @@ import solved.util.AVLTree;
 
 import java.util.*;
 
-public class EvloverNodeTree {
+public class EvloverTree {
 
     private int layer;
     private int[] xClickPosition, yClickPosition, zClickPosition;
     private EvloverUtil evloverUtil;
 
-    public EvloverNodeTree(int layer) {
+    public EvloverTree(int layer) {
         this.layer = layer;
         evloverUtil = new EvloverUtil(layer);
         xClickPosition = new int[3 * layer * (layer - 1) + 1];
@@ -484,7 +484,7 @@ public class EvloverNodeTree {
     }
 
     private List<EvloverNode> BFSBuildPassPath(EvloverNode evloverNode) {
-        List<EvloverNode> passPath = new ArrayList<>();
+        List<EvloverNode> passPath = new LinkedList<>();
         while (evloverNode != null) {
             passPath.add(0, evloverNode);
             evloverNode = evloverNode.getParent();
@@ -493,7 +493,7 @@ public class EvloverNodeTree {
     }
 
     private List<EvloverNode> BBFSBuildPassPath(long junctionStatus, AVLTree<EvloverNode> startAVLTree, AVLTree<EvloverNode> endAVLTree) {
-        List<EvloverNode> passPath = new ArrayList<>();
+        List<EvloverNode> passPath = new LinkedList<>();
 
         EvloverNode junctionEvloverNode = startAVLTree.get(junctionStatus);
         while (junctionEvloverNode != null) {

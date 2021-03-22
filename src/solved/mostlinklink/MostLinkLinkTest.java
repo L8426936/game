@@ -5,22 +5,22 @@ public class MostLinkLinkTest {
 	public static void main(String[] args) throws Exception {
 		// ------------------------------------------ 测试使用 ----------------------------------------------------
 		// char[][] status = {
-		// 		{MostLinkLinkUtil.EMPTY, MostLinkLinkUtil.EMPTY, MostLinkLinkUtil.EXIST, MostLinkLinkUtil.EMPTY, MostLinkLinkUtil.EMPTY, MostLinkLinkUtil.BAN},
-		// 		{MostLinkLinkUtil.EMPTY, MostLinkLinkUtil.EMPTY, MostLinkLinkUtil.EMPTY, MostLinkLinkUtil.EMPTY, MostLinkLinkUtil.EMPTY, MostLinkLinkUtil.EMPTY},
-		// 		{MostLinkLinkUtil.BAN, MostLinkLinkUtil.EMPTY, MostLinkLinkUtil.EMPTY, MostLinkLinkUtil.EMPTY, MostLinkLinkUtil.BAN, MostLinkLinkUtil.EMPTY},
-		// 		{MostLinkLinkUtil.EMPTY, MostLinkLinkUtil.EMPTY, MostLinkLinkUtil.BAN, MostLinkLinkUtil.EMPTY, MostLinkLinkUtil.EMPTY, MostLinkLinkUtil.EMPTY},
-		// 		{MostLinkLinkUtil.EMPTY, MostLinkLinkUtil.EMPTY, MostLinkLinkUtil.EMPTY, MostLinkLinkUtil.BAN, MostLinkLinkUtil.EMPTY, MostLinkLinkUtil.EMPTY}
+		// 		{MostLinkLinkPlayer.EMPTY, MostLinkLinkPlayer.EMPTY, MostLinkLinkPlayer.EXIST, MostLinkLinkPlayer.EMPTY, MostLinkLinkPlayer.EMPTY, MostLinkLinkPlayer.BAN},
+		// 		{MostLinkLinkPlayer.EMPTY, MostLinkLinkPlayer.EMPTY, MostLinkLinkPlayer.EMPTY, MostLinkLinkPlayer.EMPTY, MostLinkLinkPlayer.EMPTY, MostLinkLinkPlayer.EMPTY},
+		// 		{MostLinkLinkPlayer.BAN, MostLinkLinkPlayer.EMPTY, MostLinkLinkPlayer.EMPTY, MostLinkLinkPlayer.EMPTY, MostLinkLinkPlayer.BAN, MostLinkLinkPlayer.EMPTY},
+		// 		{MostLinkLinkPlayer.EMPTY, MostLinkLinkPlayer.EMPTY, MostLinkLinkPlayer.BAN, MostLinkLinkPlayer.EMPTY, MostLinkLinkPlayer.EMPTY, MostLinkLinkPlayer.EMPTY},
+		// 		{MostLinkLinkPlayer.EMPTY, MostLinkLinkPlayer.EMPTY, MostLinkLinkPlayer.EMPTY, MostLinkLinkPlayer.BAN, MostLinkLinkPlayer.EMPTY, MostLinkLinkPlayer.EMPTY}
 		// };
-		// MostLinkLinkUtil.printStatus(status);
+		// MostLinkLinkPlayer.printStatus(status);
 		// GameInfo gameInfo = new GameInfo();
 		// gameInfo.setCount(25);
 		// gameInfo.setStartRow(0);
 		// gameInfo.setStartCol(2);
 		// gameInfo.setStatus(status);
-		// MostLinkLinkNodeTree nodeTree = new MostLinkLinkNodeTree(gameInfo);
-		// nodeTree.DFS();
+		// MostLinkLinkTree mostLinkLinkTree = new MostLinkLinkTree(gameInfo);
+		// mostLinkLinkTree.DFS();
 		// --------------------------------------------------------------------------------------------------------
-		MostLinkLinkUtil.autoPlay(MostLinkLinkUtil.OPENCV_ANALYSIS, MostLinkLinkUtil.RANK_LIST);
+		MostLinkLinkPlayer.autoPlay(MostLinkLinkPlayer.OPENCV_ANALYSIS, MostLinkLinkPlayer.RANK_LIST);
 	}
 	
 }
