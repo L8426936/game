@@ -113,6 +113,59 @@ public class AVLTree<V> {
         return null;
     }
 
+    public boolean remove(long key) {
+        Node<V> node = root;
+        while (node != null) {
+            long oldKey = node.getKey();
+            if (oldKey == key) {
+                remove(node);
+                size--;
+                return true;
+            }
+            if (oldKey > key) {
+                node = node.getLeft();
+            } else {
+                node = node.getRight();
+            }
+        }
+        return false;
+    }
+
+    private void remove(Node<V> node) {
+        if (node.getLeft() == null && node.getRight() == null) {
+            if (node.getParent() == null) {
+                root = null;
+            } else {
+                Node<V> parent = node.getParent();
+                if (parent.getLeft() == node) {
+                    parent.setLeft(null);
+                } else {
+                    parent.setRight(null);
+                }
+                reBalance(parent);
+            }
+            return;
+        }
+
+        if (node.getLeft() != null) {
+            Node<V> child = node.getLeft();
+            while (child.getRight() != null) {
+                child = child.getRight();
+            }
+            node.setKey(child.getKey());
+            node.setValue(child.getValue());
+            remove(child);
+        } else {
+            Node<V> child = node.getRight();
+            while (child.getLeft() != null) {
+                child = child.getLeft();
+            }
+            node.setKey(child.getKey());
+            node.setValue(child.getValue());
+            remove(child);
+        }
+    }
+
     public int size() {
         return size;
     }
@@ -199,7 +252,7 @@ public class AVLTree<V> {
         if (node != null) {
             int leftHeight = height(node.getLeft());
             int rightHeight = height(node.getRight());
-            node.setHeight(1 + (leftHeight > rightHeight ? leftHeight : rightHeight));
+            node.setHeight(1 + Math.max(leftHeight, rightHeight));
         }
     }
 

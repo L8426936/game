@@ -7,29 +7,42 @@ import java.util.*;
 public class EvloverTree {
 
     private int layer;
-    private int[] xClickPosition, yClickPosition, zClickPosition;
+    private int[] clickIndex;
+    private int[][] weight;
     private EvloverUtil evloverUtil;
 
     public EvloverTree(int layer) {
         this.layer = layer;
         evloverUtil = new EvloverUtil(layer);
-        xClickPosition = new int[3 * layer * (layer - 1) + 1];
-        yClickPosition = new int[3 * layer * (layer - 1) + 1];
-        zClickPosition = new int[3 * layer * (layer - 1) + 1];
-        for (int index = 0, z = -(layer - 1); z <= layer - 1; z++) {
-            for (int x = -(layer - 1); x <= layer - 1; x++) {
-                for (int y = -(layer - 1); y <= layer - 1; y++) {
+        clickIndex = new int[3 * layer * (layer - 1) + 1];
+        for (int i = 0, index = 0, z = -layer; z <= layer; z++) {
+            for (int x = -layer; x <= layer; x++) {
+                for (int y = -layer; y <= layer; y++) {
                     if (x + y + z == 0) {
-                        xClickPosition[index] = x;
-                        yClickPosition[index] = y;
-                        zClickPosition[index++] = z;
+                        if (-layer < x && x < layer && -layer < y && y < layer && -layer < z && z < layer) {
+                            clickIndex[i++] = index;
+                        }
+                        index++;
                     }
                 }
             }
         }
-        // System.out.println(Arrays.toString(xClickPosition));
-        // System.out.println(Arrays.toString(yClickPosition));
-        // System.out.println(Arrays.toString(zClickPosition));
+        // System.out.println(Arrays.toString(clickIndex));
+
+        int count = 3 * layer * (layer + 1) + 1;
+        weight = new int[count][count];
+        for (int row = 0; row < count; row++) {
+            char[] startStatus = EvloverUtil.longToArray(layer, 1L << row);
+            for (int col = 0; col < count; col++) {
+                if (row != col) {
+                    char[] endStatus = EvloverUtil.longToArray(layer, 1L << col);
+                    List<EvloverNode> evloverNodes = BFS(startStatus, endStatus, false);
+                    if (evloverNodes != null) {
+                        weight[row][col] = evloverNodes.size() - 1;
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -41,34 +54,35 @@ public class EvloverTree {
         List<List<EvloverNode>> tree = new ArrayList<>();
         AVLTree<EvloverNode> avlTree = new AVLTree<>();
 
-        EvloverNode rootEvloverNode = new EvloverNode();
-        rootEvloverNode.setStatus(EvloverUtil.charsStatusToLongStatus(status));
+        EvloverNode rootNode = new EvloverNode();
+        rootNode.setStatus(EvloverUtil.arrayToLong(status));
         List<EvloverNode> treeLayer = new ArrayList<>(1);
 
-        treeLayer.add(rootEvloverNode);
+        treeLayer.add(rootNode);
         tree.add(treeLayer);
-        avlTree.put(rootEvloverNode.getStatus(), rootEvloverNode);
+        avlTree.put(rootNode.getStatus(), rootNode);
 
         int[] actions = {EvloverUtil.C, EvloverUtil.P, EvloverUtil.A};
         for (int i = 0; i < tree.size(); i++) {
             treeLayer = tree.get(i);
             List<EvloverNode> nextTreeLayer = new ArrayList<>();
-            for (EvloverNode parentEvloverNode : treeLayer) {
-                long parentStatus = parentEvloverNode.getStatus();
-                for (int j = 0; j < xClickPosition.length; j++) {
-                    int x = xClickPosition[j], y = yClickPosition[j], z = zClickPosition[j];
+            for (EvloverNode parentNode : treeLayer) {
+                long parentStatus = parentNode.getStatus();
+                for (int index : clickIndex) {
+                    int x = evloverUtil.indexToX(index), y = evloverUtil.indexToY(index), z = evloverUtil.indexToZ(index);
                     for (int action : actions) {
                         long childStatus = nextStatus(parentStatus, x, y, z, action);
                         if (avlTree.get(childStatus) == null) {
-                            EvloverNode childEvloverNode = new EvloverNode();
-                            childEvloverNode.setParent(parentEvloverNode);
-                            childEvloverNode.setStatus(childStatus);
-                            childEvloverNode.setX(x);
-                            childEvloverNode.setY(y);
-                            childEvloverNode.setZ(z);
-                            childEvloverNode.setAction(action);
-                            avlTree.put(childStatus, childEvloverNode);
-                            nextTreeLayer.add(childEvloverNode);
+                            EvloverNode childNode = new EvloverNode();
+                            childNode.setParent(parentNode);
+                            childNode.setStatus(childStatus);
+                            childNode.setX(x);
+                            childNode.setY(y);
+                            childNode.setZ(z);
+                            childNode.setAction(action);
+                            childNode.setStep(parentNode.getStep() + 1);
+                            avlTree.put(childStatus, childNode);
+                            nextTreeLayer.add(childNode);
                         }
                     }
                 }
@@ -87,50 +101,56 @@ public class EvloverTree {
      * @param endStatus
      * @return
      */
-    public List<EvloverNode> BFS(char[] startStatus, char[] endStatus) {
-        long startLongStatus = EvloverUtil.charsStatusToLongStatus(startStatus);
-        long endLongStatus = EvloverUtil.charsStatusToLongStatus(endStatus);
+    private List<EvloverNode> BFS(char[] startStatus, char[] endStatus, boolean printlnInfo) {
+        long startLongStatus = EvloverUtil.arrayToLong(startStatus);
+        long endLongStatus = EvloverUtil.arrayToLong(endStatus);
 
         if (startLongStatus != endLongStatus && EvloverUtil.bitCount(startLongStatus) == EvloverUtil.bitCount(endLongStatus)) {
             Queue<EvloverNode> queue = new LinkedList<>();
             AVLTree<EvloverNode> avlTree = new AVLTree<>();
 
-            EvloverNode rootEvloverNode = new EvloverNode();
-            rootEvloverNode.setStatus(startLongStatus);
+            EvloverNode rootNode = new EvloverNode();
+            rootNode.setStatus(startLongStatus);
 
-            queue.offer(rootEvloverNode);
-            avlTree.put(startLongStatus, rootEvloverNode);
+            queue.offer(rootNode);
+            avlTree.put(startLongStatus, rootNode);
 
             int[] actions = {EvloverUtil.P, EvloverUtil.C, EvloverUtil.A};
             while (!queue.isEmpty()) {
-                EvloverNode parentEvloverNode = queue.poll();
-                long parentStatus = parentEvloverNode.getStatus();
-                for (int i = 0; i < xClickPosition.length; i++) {
-                    int x = xClickPosition[i], y = yClickPosition[i], z = zClickPosition[i];
+                EvloverNode parentNode = queue.poll();
+                long parentStatus = parentNode.getStatus();
+                for (int index : clickIndex) {
+                    int x = evloverUtil.indexToX(index), y = evloverUtil.indexToY(index), z = evloverUtil.indexToZ(index);
                     for (int action : actions) {
                         long childStatus = nextStatus(parentStatus, x, y, z, action);
                         if (avlTree.get(childStatus) == null) {
-                            EvloverNode childEvloverNode = new EvloverNode();
-                            childEvloverNode.setParent(parentEvloverNode);
-                            childEvloverNode.setStatus(childStatus);
-                            childEvloverNode.setX(x);
-                            childEvloverNode.setY(y);
-                            childEvloverNode.setZ(z);
-                            childEvloverNode.setAction(action);
-                            avlTree.put(childStatus, childEvloverNode);
-                            queue.offer(childEvloverNode);
+                            EvloverNode childNode = new EvloverNode();
+                            childNode.setParent(parentNode);
+                            childNode.setStatus(childStatus);
+                            childNode.setX(x);
+                            childNode.setY(y);
+                            childNode.setZ(z);
+                            childNode.setAction(action);
+                            avlTree.put(childStatus, childNode);
+                            queue.offer(childNode);
 
                             // 找到终点状态
                             if (childStatus == endLongStatus) {
-                                System.out.format("treeSum:%d queueSize:%d%n", avlTree.size(), queue.size());
-                                return BFSBuildPassPath(childEvloverNode);
+                                if (printlnInfo) {
+                                    System.out.format("treeSum:%d queueSize:%d%n", avlTree.size(), queue.size());
+                                }
+                                return BFSBuildPassPath(childNode);
                             }
                         }
                     }
                 }
             }
         }
-        return new ArrayList<>(0);
+        return null;
+    }
+
+    public List<EvloverNode> BFS(char[] startStatus, char[] endStatus) {
+        return BFS(startStatus, endStatus, true);
     }
 
     /**
@@ -141,70 +161,67 @@ public class EvloverTree {
      * @return
      */
     public List<EvloverNode> BFSRemoveSymmetry(char[] startStatus, char[] endStatus) {
-        long startLongStatus = EvloverUtil.charsStatusToLongStatus(startStatus);
-        long endLongStatus = EvloverUtil.charsStatusToLongStatus(endStatus);
+        long startLongStatus = EvloverUtil.arrayToLong(startStatus);
+        long endLongStatus = EvloverUtil.arrayToLong(endStatus);
 
         if (startLongStatus != endLongStatus && EvloverUtil.bitCount(startLongStatus) == EvloverUtil.bitCount(endLongStatus)) {
             Queue<EvloverNode> queue = new LinkedList<>();
             AVLTree<EvloverNode> avlTree = new AVLTree<>();
 
-            EvloverNode rootEvloverNode = new EvloverNode();
-            rootEvloverNode.setStatus(startLongStatus);
+            EvloverNode rootNode = new EvloverNode();
+            rootNode.setStatus(startLongStatus);
 
-            queue.offer(rootEvloverNode);
-            avlTree.put(startLongStatus, rootEvloverNode);
+            queue.offer(rootNode);
+            avlTree.put(startLongStatus, rootNode);
 
-            int endStatusAllSymmetryType = evloverUtil.allSymmetryType(endLongStatus);
+            int endStatusSymmetry = evloverUtil.symmetry(endLongStatus);
             int[] actions = {EvloverUtil.P, EvloverUtil.C, EvloverUtil.A};
             while (!queue.isEmpty()) {
-                EvloverNode parentEvloverNode = queue.poll();
-                long parentStatus = parentEvloverNode.getStatus();
-                int allCommonSymmetryType = evloverUtil.allSymmetryType(parentStatus) & endStatusAllSymmetryType;
-                int mergeAllCommonSymmetryType = parentEvloverNode.getSymmetry() | allCommonSymmetryType;
+                EvloverNode parentNode = queue.poll();
+                long parentStatus = parentNode.getStatus();
+                int commonSymmetry = evloverUtil.symmetry(parentStatus) & endStatusSymmetry;
                 // 记录已经点击过的位置，对称位置无需再次点击
                 long logClickIndex = 0;
-                for (int i = 0; i < xClickPosition.length; i++) {
-                    int x = xClickPosition[i], y = yClickPosition[i], z = zClickPosition[i];
+                for (int value : clickIndex) {
+                    int x = evloverUtil.indexToX(value), y = evloverUtil.indexToY(value), z = evloverUtil.indexToZ(value);
                     int index = evloverUtil.index(x, y, z);
                     // 当前位置没有被点击过
                     if ((logClickIndex & (1L << index)) == 0) {
                         for (int action : actions) {
                             long childStatus = nextStatus(parentStatus, x, y, z, action);
-                            if (avlTree.get(childStatus) == null) {
 
-                                boolean add = true;
-                                for (int symmetryType = 1; add && symmetryType <= mergeAllCommonSymmetryType; symmetryType <<= 1) {
-                                    long symmetryStatus = evloverUtil.symmetryStatus(childStatus, symmetryType & mergeAllCommonSymmetryType);
+                            boolean add = avlTree.get(childStatus) == null;
+                            for (int symmetryType = 1; add && symmetryType <= commonSymmetry; symmetryType <<= 1) {
+                                long symmetryStatus = evloverUtil.symmetryStatus(childStatus, symmetryType & commonSymmetry);
+                                if (symmetryStatus != childStatus) {
                                     add = avlTree.get(symmetryStatus) == null;
                                 }
+                            }
+                            if (add) {
+                                EvloverNode childNode = new EvloverNode();
+                                childNode.setParent(parentNode);
+                                childNode.setStatus(childStatus);
+                                childNode.setX(x);
+                                childNode.setY(y);
+                                childNode.setZ(z);
+                                childNode.setAction(action);
 
-                                EvloverNode childEvloverNode = new EvloverNode();
-                                childEvloverNode.setParent(parentEvloverNode);
-                                childEvloverNode.setStatus(childStatus);
-                                childEvloverNode.setX(x);
-                                childEvloverNode.setY(y);
-                                childEvloverNode.setZ(z);
-                                childEvloverNode.setAction(action);
-                                childEvloverNode.setSymmetry(mergeAllCommonSymmetryType);
-                                avlTree.put(childStatus, childEvloverNode);
+                                queue.offer(childNode);
+                                avlTree.put(childStatus, childNode);
 
-                                if (add) {
-                                    queue.offer(childEvloverNode);
-                                    // 找到终点状态
-                                    if (childStatus == endLongStatus) {
-                                        System.out.format("treeSum:%d queueSize:%d%n", avlTree.size(), queue.size());
-                                        return BFSBuildPassPath(childEvloverNode);
-                                    }
+                                // 找到终点状态
+                                if (childStatus == endLongStatus) {
+                                    System.out.format("treeSum:%d queueSize:%d%n", avlTree.size(), queue.size());
+                                    return BFSBuildPassPath(childNode);
                                 }
-
                             }
                         }
                         logClickIndex |= 1L << index;
-                        for (int symmetryType = 1; symmetryType <= allCommonSymmetryType; symmetryType <<= 1) {
+                        for (int symmetryType = 1; symmetryType <= commonSymmetry; symmetryType <<= 1) {
                             // 记录对称的点击位置
-                            int symmetryX = EvloverUtil.symmetryX(x, y, z, symmetryType & allCommonSymmetryType);
-                            int symmetryY = EvloverUtil.symmetryY(x, y, z, symmetryType & allCommonSymmetryType);
-                            int symmetryZ = EvloverUtil.symmetryZ(x, y, z, symmetryType & allCommonSymmetryType);
+                            int symmetryX = EvloverUtil.symmetryX(x, y, z, symmetryType & commonSymmetry);
+                            int symmetryY = EvloverUtil.symmetryY(x, y, z, symmetryType & commonSymmetry);
+                            int symmetryZ = EvloverUtil.symmetryZ(x, y, z, symmetryType & commonSymmetry);
                             int symmetryIndex = evloverUtil.index(symmetryX, symmetryY, symmetryZ);
                             logClickIndex |= 1L << symmetryIndex;
                         }
@@ -212,7 +229,7 @@ public class EvloverTree {
                 }
             }
         }
-        return new ArrayList<>(0);
+        return null;
     }
 
     /**
@@ -223,8 +240,8 @@ public class EvloverTree {
      * @return
      */
     public List<EvloverNode> BBFS(char[] startStatus, char[] endStatus) {
-        long startLongStatus = EvloverUtil.charsStatusToLongStatus(startStatus);
-        long endLongStatus = EvloverUtil.charsStatusToLongStatus(endStatus);
+        long startLongStatus = EvloverUtil.arrayToLong(startStatus);
+        long endLongStatus = EvloverUtil.arrayToLong(endStatus);
 
         if (startLongStatus != endLongStatus && EvloverUtil.bitCount(startLongStatus) == EvloverUtil.bitCount(endLongStatus)) {
             Queue<EvloverNode> startQueue = new LinkedList<>();
@@ -232,15 +249,15 @@ public class EvloverTree {
             AVLTree<EvloverNode> startAVLTree = new AVLTree<>();
             AVLTree<EvloverNode> endAVLTree = new AVLTree<>();
 
-            EvloverNode startEvloverNode = new EvloverNode();
-            startEvloverNode.setStatus(startLongStatus);
-            startQueue.offer(startEvloverNode);
-            startAVLTree.put(startLongStatus, startEvloverNode);
+            EvloverNode startNode = new EvloverNode();
+            startNode.setStatus(startLongStatus);
+            startQueue.offer(startNode);
+            startAVLTree.put(startLongStatus, startNode);
 
-            EvloverNode endEvloverNode = new EvloverNode();
-            endEvloverNode.setStatus(endLongStatus);
-            endQueue.offer(endEvloverNode);
-            endAVLTree.put(endLongStatus, endEvloverNode);
+            EvloverNode endNode = new EvloverNode();
+            endNode.setStatus(endLongStatus);
+            endQueue.offer(endNode);
+            endAVLTree.put(endLongStatus, endNode);
 
             Queue<EvloverNode> queue;
             AVLTree<EvloverNode> avlTree, checkAVLTree;
@@ -252,7 +269,7 @@ public class EvloverTree {
                     avlTree = startAVLTree;
                     checkAVLTree = endAVLTree;
                     startIndex = 0;
-                    borderIndex = xClickPosition.length;
+                    borderIndex = clickIndex.length;
                     offset = 1;
                     actions[1] = EvloverUtil.C;
                     actions[2] = EvloverUtil.A;
@@ -260,33 +277,32 @@ public class EvloverTree {
                     queue = endQueue;
                     avlTree = endAVLTree;
                     checkAVLTree = startAVLTree;
-                    startIndex = xClickPosition.length - 1;
+                    startIndex = clickIndex.length - 1;
                     borderIndex = -1;
                     offset = -1;
                     actions[1] = EvloverUtil.A;
                     actions[2] = EvloverUtil.C;
                 }
                 for (int i = 0, j = queue.size(); i < j; i++) {
-                    EvloverNode parentEvloverNode = queue.poll();
-                    long parentStatus = parentEvloverNode.getStatus();
-                    for (int k = startIndex; k != borderIndex; k += offset) {
-                        int x = xClickPosition[k], y = yClickPosition[k], z = zClickPosition[k];
+                    EvloverNode parentNode = queue.poll();
+                    long parentStatus = parentNode.getStatus();
+                        for (int k = startIndex; k != borderIndex; k += offset) {
+                            int x = evloverUtil.indexToX(clickIndex[k]), y = evloverUtil.indexToY(clickIndex[k]), z = evloverUtil.indexToZ(clickIndex[k]);
                         for (int action : actions) {
                             long childStatus = nextStatus(parentStatus, x, y, z, action);
                             if (avlTree.get(childStatus) == null) {
-                                EvloverNode childEvloverNode = new EvloverNode();
-                                childEvloverNode.setParent(parentEvloverNode);
-                                childEvloverNode.setStatus(childStatus);
-                                childEvloverNode.setX(x);
-                                childEvloverNode.setY(y);
-                                childEvloverNode.setZ(z);
-                                childEvloverNode.setAction(action);
-                                avlTree.put(childStatus, childEvloverNode);
-                                queue.offer(childEvloverNode);
+                                EvloverNode childNode = new EvloverNode();
+                                childNode.setParent(parentNode);
+                                childNode.setStatus(childStatus);
+                                childNode.setX(x);
+                                childNode.setY(y);
+                                childNode.setZ(z);
+                                childNode.setAction(action);
+                                avlTree.put(childStatus, childNode);
+                                queue.offer(childNode);
 
-                                EvloverNode junctionEvloverNode = checkAVLTree.get(childStatus);
                                 // 找到相同状态
-                                if (junctionEvloverNode != null) {
+                                if (checkAVLTree.get(childStatus) != null) {
                                     System.out.format("treeSum:%d queueSize:%d%n", startAVLTree.size() + endAVLTree.size(), startQueue.size() + endQueue.size());
                                     return BBFSBuildPassPath(childStatus, startAVLTree, endAVLTree);
                                 }
@@ -296,7 +312,7 @@ public class EvloverTree {
                 }
             }
         }
-        return new ArrayList<>(0);
+        return null;
     }
 
     /**
@@ -307,8 +323,8 @@ public class EvloverTree {
      * @return
      */
     public List<EvloverNode> BBFSRemoveSymmetry(char[] startStatus, char[] endStatus) {
-        long startLongStatus = EvloverUtil.charsStatusToLongStatus(startStatus);
-        long endLongStatus = EvloverUtil.charsStatusToLongStatus(endStatus);
+        long startLongStatus = EvloverUtil.arrayToLong(startStatus);
+        long endLongStatus = EvloverUtil.arrayToLong(endStatus);
 
         if (startLongStatus != endLongStatus && EvloverUtil.bitCount(startLongStatus) == EvloverUtil.bitCount(endLongStatus)) {
             Queue<EvloverNode> startQueue = new LinkedList<>();
@@ -316,31 +332,31 @@ public class EvloverTree {
             AVLTree<EvloverNode> startAVLTree = new AVLTree<>();
             AVLTree<EvloverNode> endAVLTree = new AVLTree<>();
 
-            EvloverNode startEvloverNode = new EvloverNode();
-            startEvloverNode.setStatus(startLongStatus);
-            startQueue.offer(startEvloverNode);
-            startAVLTree.put(startLongStatus, startEvloverNode);
+            EvloverNode startNode = new EvloverNode();
+            startNode.setStatus(startLongStatus);
+            startQueue.offer(startNode);
+            startAVLTree.put(startLongStatus, startNode);
 
-            EvloverNode endEvloverNode = new EvloverNode();
-            endEvloverNode.setStatus(endLongStatus);
-            endQueue.offer(endEvloverNode);
-            endAVLTree.put(endLongStatus, endEvloverNode);
+            EvloverNode endNode = new EvloverNode();
+            endNode.setStatus(endLongStatus);
+            endQueue.offer(endNode);
+            endAVLTree.put(endLongStatus, endNode);
 
-            int startStatusAllSymmetryType = evloverUtil.allSymmetryType(startLongStatus);
-            int endStatusAllSymmetryType = evloverUtil.allSymmetryType(endLongStatus);
+            int startStatusSymmetry = evloverUtil.symmetry(startLongStatus);
+            int endStatusSymmetry = evloverUtil.symmetry(endLongStatus);
 
             Queue<EvloverNode> queue;
             AVLTree<EvloverNode> avlTree, checkAVLTree;
-            int startIndex, borderIndex, offset, statusAllSymmetryType;
+            int startIndex, borderIndex, offset, statusSymmetry;
             int[] actions = {EvloverUtil.P, EvloverUtil.C, EvloverUtil.A};
             while (!startQueue.isEmpty() || !endQueue.isEmpty()) {
                 if (!startQueue.isEmpty() && startQueue.size() < endQueue.size()) {
                     queue = startQueue;
                     avlTree = startAVLTree;
                     checkAVLTree = endAVLTree;
-                    statusAllSymmetryType = endStatusAllSymmetryType;
+                    statusSymmetry = endStatusSymmetry;
                     startIndex = 0;
-                    borderIndex = xClickPosition.length;
+                    borderIndex = clickIndex.length;
                     offset = 1;
                     actions[1] = EvloverUtil.C;
                     actions[2] = EvloverUtil.A;
@@ -348,62 +364,60 @@ public class EvloverTree {
                     queue = endQueue;
                     avlTree = endAVLTree;
                     checkAVLTree = startAVLTree;
-                    statusAllSymmetryType = startStatusAllSymmetryType;
-                    startIndex = xClickPosition.length - 1;
+                    statusSymmetry = startStatusSymmetry;
+                    startIndex = clickIndex.length - 1;
                     borderIndex = -1;
                     offset = -1;
                     actions[1] = EvloverUtil.A;
                     actions[2] = EvloverUtil.C;
                 }
                 for (int i = 0, j = queue.size(); i < j; i++) {
-                    EvloverNode parentEvloverNode = queue.poll();
-                    long parentStatus = parentEvloverNode.getStatus();
-                    int allCommonSymmetryType = evloverUtil.allSymmetryType(parentStatus) & statusAllSymmetryType;
-                    int mergeAllCommonSymmetryType = parentEvloverNode.getSymmetry() | allCommonSymmetryType;
+                    EvloverNode parentNode = queue.poll();
+                    long parentStatus = parentNode.getStatus();
+                    int commonSymmetry = evloverUtil.symmetry(parentStatus) & statusSymmetry;
                     // 记录已经点击过的位置，对称位置无需再次点击
                     long logClickIndex = 0;
                     for (int k = startIndex; k != borderIndex; k += offset) {
-                        int x = xClickPosition[k], y = yClickPosition[k], z = zClickPosition[k];
+                        int x = evloverUtil.indexToX(clickIndex[k]), y = evloverUtil.indexToY(clickIndex[k]), z = evloverUtil.indexToZ(clickIndex[k]);
                         int index = evloverUtil.index(x, y, z);
                         // 当前位置没有被点击过
                         if ((logClickIndex & (1L << index)) == 0) {
                             for (int action : actions) {
                                 long childStatus = nextStatus(parentStatus, x, y, z, action);
-                                if (avlTree.get(childStatus) == null) {
-                                    boolean add = true;
-                                    for (int symmetryType = 1; add && symmetryType <= mergeAllCommonSymmetryType; symmetryType <<= 1) {
-                                        long symmetryStatus = evloverUtil.symmetryStatus(childStatus, symmetryType & mergeAllCommonSymmetryType);
+                                boolean add = avlTree.get(childStatus) == null;
+
+                                for (int symmetryType = 1; add && symmetryType <= commonSymmetry; symmetryType <<= 1) {
+                                    long symmetryStatus = evloverUtil.symmetryStatus(childStatus, symmetryType & commonSymmetry);
+                                    if (symmetryStatus != childStatus) {
                                         add = avlTree.get(symmetryStatus) == null;
                                     }
+                                }
+                                if (add) {
+                                    EvloverNode childNode = new EvloverNode();
+                                    childNode.setParent(parentNode);
+                                    childNode.setStatus(childStatus);
+                                    childNode.setX(x);
+                                    childNode.setY(y);
+                                    childNode.setZ(z);
+                                    childNode.setAction(action);
 
-                                    EvloverNode childEvloverNode = new EvloverNode();
-                                    childEvloverNode.setParent(parentEvloverNode);
-                                    childEvloverNode.setStatus(childStatus);
-                                    childEvloverNode.setX(x);
-                                    childEvloverNode.setY(y);
-                                    childEvloverNode.setZ(z);
-                                    childEvloverNode.setAction(action);
-                                    childEvloverNode.setSymmetry(mergeAllCommonSymmetryType);
-                                    avlTree.put(childStatus, childEvloverNode);
+                                    queue.offer(childNode);
+                                    avlTree.put(childStatus, childNode);
 
-                                    if (add) {
-                                        queue.offer(childEvloverNode);
-                                        EvloverNode junctionEvloverNode = checkAVLTree.get(childStatus);
-                                        // 找到相同状态
-                                        if (junctionEvloverNode != null) {
-                                            System.out.format("treeSum:%d queueSize:%d%n", startAVLTree.size() + endAVLTree.size(), startQueue.size() + endQueue.size());
-                                            return BBFSBuildPassPath(childStatus, startAVLTree, endAVLTree);
-                                        }
+                                    // 找到相同状态
+                                    if (checkAVLTree.get(childStatus) != null) {
+                                        System.out.format("treeSum:%d queueSize:%d%n", startAVLTree.size() + endAVLTree.size(), startQueue.size() + endQueue.size());
+                                        return BBFSBuildPassPath(childStatus, startAVLTree, endAVLTree);
                                     }
                                 }
                             }
                         }
                         logClickIndex |= 1L << index;
-                        for (int symmetryType = 1; symmetryType <= allCommonSymmetryType; symmetryType <<= 1) {
+                        for (int symmetryType = 1; symmetryType <= commonSymmetry; symmetryType <<= 1) {
                             // 记录对称的点击位置
-                            int symmetryX = EvloverUtil.symmetryX(x, y, z, symmetryType & allCommonSymmetryType);
-                            int symmetryY = EvloverUtil.symmetryY(x, y, z, symmetryType & allCommonSymmetryType);
-                            int symmetryZ = EvloverUtil.symmetryZ(x, y, z, symmetryType & allCommonSymmetryType);
+                            int symmetryX = EvloverUtil.symmetryX(x, y, z, symmetryType & commonSymmetry);
+                            int symmetryY = EvloverUtil.symmetryY(x, y, z, symmetryType & commonSymmetry);
+                            int symmetryZ = EvloverUtil.symmetryZ(x, y, z, symmetryType & commonSymmetry);
                             int symmetryIndex = evloverUtil.index(symmetryX, symmetryY, symmetryZ);
                             logClickIndex |= 1L << symmetryIndex;
                         }
@@ -411,7 +425,116 @@ public class EvloverTree {
                 }
             }
         }
-        return new ArrayList<>(0);
+        return null;
+    }
+
+    /**
+     * <p>不一定能找到最优解</p>
+     * @param startStatus
+     * @param endStatus
+     * @return
+     */
+    public List<EvloverNode> aStarSearch(char[] startStatus, char[] endStatus) {
+        long startLongStatus = EvloverUtil.arrayToLong(startStatus);
+        long endLongStatus = EvloverUtil.arrayToLong(endStatus);
+
+        if (startLongStatus != endLongStatus && EvloverUtil.bitCount(startLongStatus) == EvloverUtil.bitCount(endLongStatus)) {
+            Queue<EvloverNode> queue = new PriorityQueue<>(Comparator.comparingInt(EvloverNode::getScore));
+            AVLTree<EvloverNode> openAVLTree = new AVLTree<>();
+            AVLTree<EvloverNode> closeAVLTree = new AVLTree<>();
+
+            EvloverNode rootNode = new EvloverNode();
+            rootNode.setStatus(startLongStatus);
+
+            queue.offer(rootNode);
+
+            int[] actions = {EvloverUtil.P, EvloverUtil.C, EvloverUtil.A};
+            while (!queue.isEmpty()) {
+                EvloverNode parentNode = queue.poll();
+                long parentStatus = parentNode.getStatus();
+                openAVLTree.remove(parentStatus);
+                if (closeAVLTree.put(parentStatus, parentNode)) {
+                    for (int i = 0; i < clickIndex.length; i++) {
+                        int x = evloverUtil.indexToX(clickIndex[i]), y = evloverUtil.indexToY(clickIndex[i]), z = evloverUtil.indexToZ(clickIndex[i]);
+                        for (int action : actions) {
+                            long childStatus = nextStatus(parentStatus, x, y, z, action);
+                            EvloverNode evloverNode = closeAVLTree.get(childStatus);
+                            if (evloverNode == null) {
+                                evloverNode = openAVLTree.get(childStatus);
+                                if (evloverNode == null) {
+                                    EvloverNode childNode = new EvloverNode();
+                                    childNode.setParent(parentNode);
+                                    childNode.setStatus(childStatus);
+                                    childNode.setX(x);
+                                    childNode.setY(y);
+                                    childNode.setZ(z);
+                                    childNode.setAction(action);
+                                    childNode.setStep(parentNode.getStep() + 1);
+                                    childNode.setScore(childNode.getStep() + score(childStatus, endLongStatus));
+                                    openAVLTree.put(childStatus, childNode);
+                                    queue.offer(childNode);
+
+                                    // 找到终点状态
+                                    if (childStatus == endLongStatus) {
+                                        System.out.format("treeSum:%d queueSize:%d%n", closeAVLTree.size() + openAVLTree.size(), queue.size());
+                                        return BFSBuildPassPath(childNode);
+                                    }
+                                } else if (evloverNode.getStep() > parentNode.getStep() + 1) {
+                                    evloverNode.setParent(parentNode);
+                                    evloverNode.setX(x);
+                                    evloverNode.setY(y);
+                                    evloverNode.setZ(z);
+                                    evloverNode.setAction(action);
+                                    evloverNode.setStep(parentNode.getStep() + 1);
+                                    evloverNode.setScore(evloverNode.getStep() + score(childStatus, endLongStatus));
+                                    queue.offer(evloverNode);
+                                }
+                            } else if (evloverNode.getStep() > parentNode.getStep() + 1) {
+                                evloverNode.setParent(parentNode);
+                                evloverNode.setX(x);
+                                evloverNode.setY(y);
+                                evloverNode.setZ(z);
+                                evloverNode.setAction(action);
+                                evloverNode.setStep(parentNode.getStep() + 1);
+                                evloverNode.setScore(evloverNode.getStep() + score(childStatus, endLongStatus));
+                                queue.offer(evloverNode);
+                                openAVLTree.put(childStatus, evloverNode);
+                                closeAVLTree.remove(parentStatus);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    public int score(long currentStatus, long endStatus) {
+        int count = EvloverUtil.bitCount(currentStatus);
+
+        int[] currentStatusIndex = new int[count];
+        for (int i = 0, j = 0; j < count; i++) {
+            if ((currentStatus & (1L << i)) > 0) {
+                currentStatusIndex[j++] = i;
+            }
+        }
+
+        int[] endStatusIndex = new int[count];
+        for (int i = 0, j = 0; j < count; i++) {
+            if ((endStatus & (1L << i)) > 0) {
+                endStatusIndex[j++] = i;
+            }
+        }
+
+        int[][] weight = new int[count][count];
+        for (int i = 0; i < count; i++) {
+            for (int j = 0; j < count; j++) {
+                weight[i][j] = -this.weight[currentStatusIndex[i]][endStatusIndex[j]];
+            }
+        }
+
+        KM km = new KM();
+        return -km.solve(weight);
     }
 
     /**
@@ -428,49 +551,30 @@ public class EvloverTree {
          *  5 6
          */
         long childStatus = 0;
-        int index = -1;
         switch (action) {
             case EvloverUtil.P:
-                index = evloverUtil.index(x, y + 1, z - 1);
-                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x, y - 1, z + 1);
-                index = evloverUtil.index(x + 1, y, z - 1);
-                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x - 1, y, z + 1);
-                index = evloverUtil.index(x - 1, y + 1, z);
-                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x + 1, y - 1, z);
-                index = evloverUtil.index(x + 1, y - 1, z);
-                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x - 1, y + 1, z);
-                index = evloverUtil.index(x - 1, y, z + 1);
-                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x + 1, y, z - 1);
-                index = evloverUtil.index(x, y - 1, z + 1);
-                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x, y + 1, z - 1);
+                childStatus |= ((parentStatus >> evloverUtil.index(x, y + 1, z - 1)) & 1L) << evloverUtil.index(x, y - 1, z + 1);
+                childStatus |= ((parentStatus >> evloverUtil.index(x + 1, y, z - 1)) & 1L) << evloverUtil.index(x - 1, y, z + 1);
+                childStatus |= ((parentStatus >> evloverUtil.index(x - 1, y + 1, z)) & 1L) << evloverUtil.index(x + 1, y - 1, z);
+                childStatus |= ((parentStatus >> evloverUtil.index(x + 1, y - 1, z)) & 1L) << evloverUtil.index(x - 1, y + 1, z);
+                childStatus |= ((parentStatus >> evloverUtil.index(x - 1, y, z + 1)) & 1L) << evloverUtil.index(x + 1, y, z - 1);
+                childStatus |= ((parentStatus >> evloverUtil.index(x, y - 1, z + 1)) & 1L) << evloverUtil.index(x, y + 1, z - 1);
                 break;
             case EvloverUtil.C:
-                index = evloverUtil.index(x, y + 1, z - 1);
-                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x + 1, y, z - 1);
-                index = evloverUtil.index(x + 1, y, z - 1);
-                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x + 1, y - 1, z);
-                index = evloverUtil.index(x - 1, y + 1, z);
-                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x, y + 1, z - 1);
-                index = evloverUtil.index(x + 1, y - 1, z);
-                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x, y - 1, z + 1);
-                index = evloverUtil.index(x - 1, y, z + 1);
-                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x - 1, y + 1, z);
-                index = evloverUtil.index(x, y - 1, z + 1);
-                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x - 1, y, z + 1);
+                childStatus |= ((parentStatus >> evloverUtil.index(x, y + 1, z - 1)) & 1L) << evloverUtil.index(x + 1, y, z - 1);
+                childStatus |= ((parentStatus >> evloverUtil.index(x + 1, y, z - 1)) & 1L) << evloverUtil.index(x + 1, y - 1, z);
+                childStatus |= ((parentStatus >> evloverUtil.index(x - 1, y + 1, z)) & 1L) << evloverUtil.index(x, y + 1, z - 1);
+                childStatus |= ((parentStatus >> evloverUtil.index(x + 1, y - 1, z)) & 1L) << evloverUtil.index(x, y - 1, z + 1);
+                childStatus |= ((parentStatus >> evloverUtil.index(x - 1, y, z + 1)) & 1L) << evloverUtil.index(x - 1, y + 1, z);
+                childStatus |= ((parentStatus >> evloverUtil.index(x, y - 1, z + 1)) & 1L) << evloverUtil.index(x - 1, y, z + 1);
                 break;
             case EvloverUtil.A:
-                index = evloverUtil.index(x, y + 1, z - 1);
-                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x - 1, y + 1, z);
-                index = evloverUtil.index(x + 1, y, z - 1);
-                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x, y + 1, z - 1);
-                index = evloverUtil.index(x - 1, y + 1, z);
-                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x - 1, y, z + 1);
-                index = evloverUtil.index(x + 1, y - 1, z);
-                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x + 1, y, z - 1);
-                index = evloverUtil.index(x - 1, y, z + 1);
-                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x, y - 1, z + 1);
-                index = evloverUtil.index(x, y - 1, z + 1);
-                childStatus |= (((parentStatus & (1L << index)) >> index) & 1L) << evloverUtil.index(x + 1, y - 1, z);
+                childStatus |= ((parentStatus >> evloverUtil.index(x, y + 1, z - 1)) & 1L) << evloverUtil.index(x - 1, y + 1, z);
+                childStatus |= ((parentStatus >> evloverUtil.index(x + 1, y, z - 1)) & 1L) << evloverUtil.index(x, y + 1, z - 1);
+                childStatus |= ((parentStatus >> evloverUtil.index(x - 1, y + 1, z)) & 1L) << evloverUtil.index(x - 1, y, z + 1);
+                childStatus |= ((parentStatus >> evloverUtil.index(x + 1, y - 1, z)) & 1L) << evloverUtil.index(x + 1, y, z - 1);
+                childStatus |= ((parentStatus >> evloverUtil.index(x - 1, y, z + 1)) & 1L) << evloverUtil.index(x, y - 1, z + 1);
+                childStatus |= ((parentStatus >> evloverUtil.index(x, y - 1, z + 1)) & 1L) << evloverUtil.index(x + 1, y - 1, z);
                 break;
             default:
         }
@@ -495,36 +599,36 @@ public class EvloverTree {
     private List<EvloverNode> BBFSBuildPassPath(long junctionStatus, AVLTree<EvloverNode> startAVLTree, AVLTree<EvloverNode> endAVLTree) {
         List<EvloverNode> passPath = new LinkedList<>();
 
-        EvloverNode junctionEvloverNode = startAVLTree.get(junctionStatus);
-        while (junctionEvloverNode != null) {
-            passPath.add(0, junctionEvloverNode);
-            junctionEvloverNode = junctionEvloverNode.getParent();
+        EvloverNode junctionNode = startAVLTree.get(junctionStatus);
+        while (junctionNode != null) {
+            passPath.add(0, junctionNode);
+            junctionNode = junctionNode.getParent();
         }
-        junctionEvloverNode = endAVLTree.get(junctionStatus);
-        while (junctionEvloverNode.getParent() != null) {
-            EvloverNode parentEvloverNode = junctionEvloverNode.getParent();
-            junctionEvloverNode.setStatus(parentEvloverNode.getStatus());
-            junctionEvloverNode.setAction(EvloverUtil.reverseAction(junctionEvloverNode.getAction()));
-            passPath.add(junctionEvloverNode);
-            junctionEvloverNode = junctionEvloverNode.getParent();
+        junctionNode = endAVLTree.get(junctionStatus);
+        while (junctionNode.getParent() != null) {
+            EvloverNode parentNode = junctionNode.getParent();
+            junctionNode.setStatus(parentNode.getStatus());
+            junctionNode.setAction(EvloverUtil.reverseAction(junctionNode.getAction()));
+            passPath.add(junctionNode);
+            junctionNode = junctionNode.getParent();
         }
         return rebuildPassPath(passPath);
     }
 
     private List<EvloverNode> rebuildPassPath(List<EvloverNode> passPath) {
         for (int i = 1; i < passPath.size(); i++) {
-            EvloverNode beforeEvloverNode = passPath.get(i - 1);
-            EvloverNode nextEvloverNode = passPath.get(i);
-            beforeEvloverNode.setX(nextEvloverNode.getX());
-            beforeEvloverNode.setY(nextEvloverNode.getY());
-            beforeEvloverNode.setZ(nextEvloverNode.getZ());
-            beforeEvloverNode.setAction(nextEvloverNode.getAction());
+            EvloverNode beforeNode = passPath.get(i - 1);
+            EvloverNode nextNode = passPath.get(i);
+            beforeNode.setX(nextNode.getX());
+            beforeNode.setY(nextNode.getY());
+            beforeNode.setZ(nextNode.getZ());
+            beforeNode.setAction(nextNode.getAction());
         }
-        EvloverNode endEvloverNode = passPath.get(passPath.size() - 1);
-        endEvloverNode.setX(0);
-        endEvloverNode.setY(0);
-        endEvloverNode.setZ(0);
-        endEvloverNode.setAction(0);
+        EvloverNode endNode = passPath.get(passPath.size() - 1);
+        endNode.setX(0);
+        endNode.setY(0);
+        endNode.setZ(0);
+        endNode.setAction(0);
         return passPath;
     }
 
@@ -535,7 +639,7 @@ public class EvloverTree {
     public void printlnPassPath(List<EvloverNode> passPath) {
         for (int i = 0; i < passPath.size() - 1; i++) {
             EvloverNode evloverNode = passPath.get(i);
-            char[] status = EvloverUtil.longStatusToCharsStatus(layer, evloverNode.getStatus());
+            char[] status = EvloverUtil.longToArray(layer, evloverNode.getStatus());
             for (int index = 0, z = -layer; z <= layer; z++) {
                 for (int col = Math.abs(z); col > 0; col--) {
                     System.out.print(' ');
@@ -561,7 +665,7 @@ public class EvloverTree {
             }
             System.out.format("x:%d y:%d z:%d action:%c%n", evloverNode.getX(), evloverNode.getY(), evloverNode.getZ(), EvloverUtil.actionIntToChar(evloverNode.getAction()));
         }
-        EvloverUtil.printlnStatus(EvloverUtil.longStatusToCharsStatus(layer, passPath.get(passPath.size() - 1).getStatus()));
+        EvloverUtil.printlnStatus(EvloverUtil.longToArray(layer, passPath.get(passPath.size() - 1).getStatus()));
     }
 
 }

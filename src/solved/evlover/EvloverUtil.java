@@ -3,7 +3,6 @@ package solved.evlover;
 import solved.util.AVLTree;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -15,6 +14,16 @@ public class EvloverUtil {
      * <p>A: anticlockwise swap 逆时针交换</p>
      */
     public static final int C = 1, P = 2, A = 3;
+    /**
+     * <p>ORIGIN_SYMMETRY（原点对称）: 1</p>
+     * <p>X_AXIS_SYMMETRY（X轴对称）: 2</p>
+     * <p>Y_AXIS_SYMMETRY（Y轴对称）: 4</p>
+     * <p>Z_AXIS_SYMMETRY（Z轴对称）: 8</p>
+     * <p>P_TO_X_AXIS_SYMMETRY（垂直于X轴对称）: 16</p>
+     * <p>P_TO_Y_AXIS_SYMMETRY（垂直于Y轴对称）: 32</p>
+     * <p>P_TO_Z_AXIS_SYMMETRY（垂直于Z轴对称）: 64</p>
+     */
+    public static final int ORIGIN_SYMMETRY = 1, X_AXIS_SYMMETRY = 2, Y_AXIS_SYMMETRY = 4, Z_AXIS_SYMMETRY = 8, P_TO_X_AXIS_SYMMETRY = 16, P_TO_Y_AXIS_SYMMETRY = 32, P_TO_Z_AXIS_SYMMETRY = 64;
     private int layer;
     private int[] indexToX, indexToY, indexToZ, xyzToIndex;
 
@@ -121,7 +130,7 @@ public class EvloverUtil {
         List<char[]> allUniqueStatus = new ArrayList<>();
         AVLTree<char[]> allStatusAVLTree = new AVLTree<>();
         for (int i = 0; i < allStatus.size(); i++) {
-            long status = charsStatusToLongStatus(allStatus.get(i));
+            long status = arrayToLong(allStatus.get(i));
             if (allStatusAVLTree.get(status) == null) {
                 allUniqueStatus.add(allStatus.get(i));
                 for (int symmetryType = 1; symmetryType <= 0X7F; symmetryType <<= 1) {
@@ -155,7 +164,7 @@ public class EvloverUtil {
      * @param charsStatus 数组型状态
      * @return 整型状态
      */
-    public static long charsStatusToLongStatus(char[] charsStatus) {
+    public static long arrayToLong(char[] charsStatus) {
         long longStatus = 0;
         for (int index = 0; index < charsStatus.length; index++) {
             if (charsStatus[index] != '0') {
@@ -171,7 +180,7 @@ public class EvloverUtil {
      * @param longStatus 整型状态
      * @return 数组型状态
      */
-    public static char[] longStatusToCharsStatus(int layer, long longStatus) {
+    public static char[] longToArray(int layer, long longStatus) {
         char[] charsStatus = new char[3 * layer * (layer + 1) + 1];
         for (int index = 3 * layer * (layer + 1); index >= 0; index--) {
             charsStatus[index] = ((longStatus & (1L << index)) != 0 ? '1' : '0');
@@ -225,19 +234,19 @@ public class EvloverUtil {
      */
     public static int symmetryX(int x, int y, int z, int symmetryType) {
         switch (symmetryType) {
-            case 1:
+            case ORIGIN_SYMMETRY:
                 return -x;
-            case 2:
+            case X_AXIS_SYMMETRY:
                 return -y;
-            case 4:
+            case Y_AXIS_SYMMETRY:
                 return -x;
-            case 8:
+            case Z_AXIS_SYMMETRY:
                 return -z;
-            case 16:
+            case P_TO_X_AXIS_SYMMETRY:
                 return y;
-            case 32:
+            case P_TO_Y_AXIS_SYMMETRY:
                 return x;
-            case 64:
+            case P_TO_Z_AXIS_SYMMETRY:
                 return z;
             default:
         }
@@ -261,19 +270,19 @@ public class EvloverUtil {
      */
     public static int symmetryY(int x, int y, int z, int symmetryType) {
         switch (symmetryType) {
-            case 1:
+            case ORIGIN_SYMMETRY:
                 return -y;
-            case 2:
+            case X_AXIS_SYMMETRY:
                 return -x;
-            case 4:
+            case Y_AXIS_SYMMETRY:
                 return -z;
-            case 8:
+            case Z_AXIS_SYMMETRY:
                 return -y;
-            case 16:
+            case P_TO_X_AXIS_SYMMETRY:
                 return x;
-            case 32:
+            case P_TO_Y_AXIS_SYMMETRY:
                 return z;
-            case 64:
+            case P_TO_Z_AXIS_SYMMETRY:
                 return y;
             default:
         }
@@ -297,19 +306,19 @@ public class EvloverUtil {
      */
     public static int symmetryZ(int x, int y, int z, int symmetryType) {
         switch (symmetryType) {
-            case 1:
+            case ORIGIN_SYMMETRY:
                 return -z;
-            case 2:
+            case X_AXIS_SYMMETRY:
                 return -z;
-            case 4:
+            case Y_AXIS_SYMMETRY:
                 return -y;
-            case 8:
+            case Z_AXIS_SYMMETRY:
                 return -x;
-            case 16:
+            case P_TO_X_AXIS_SYMMETRY:
                 return z;
-            case 32:
+            case P_TO_Y_AXIS_SYMMETRY:
                 return y;
-            case 64:
+            case P_TO_Z_AXIS_SYMMETRY:
                 return x;
             default:
         }
@@ -330,7 +339,12 @@ public class EvloverUtil {
      */
     public static int symmetryAction(int action, int symmetryType) {
         switch (symmetryType) {
-            case 2: case 4: case 8: case 16: case 32: case 64:
+            case X_AXIS_SYMMETRY:
+            case Y_AXIS_SYMMETRY:
+            case Z_AXIS_SYMMETRY:
+            case P_TO_X_AXIS_SYMMETRY:
+            case P_TO_Y_AXIS_SYMMETRY:
+            case P_TO_Z_AXIS_SYMMETRY:
                 switch (action) {
                     case A:
                         return C;
@@ -399,7 +413,7 @@ public class EvloverUtil {
      * @return
      */
     public int index(int x, int y, int z) {
-        return xyzToIndex[((layer << 1) + 1) * (z + layer) + (z <= 0 ? layer - y : layer + x)];
+        return xyzToIndex[((layer << 1) + 1) * (layer + z) + (z <= 0 ? layer - y : layer + x)];
     }
 
     public int indexToX(int index) {
@@ -429,19 +443,19 @@ public class EvloverUtil {
      */
     public long symmetryStatus(long status, int symmetryType) {
         switch (symmetryType) {
-            case 1:
+            case ORIGIN_SYMMETRY:
                 return originSymmetryStatus(status);
-            case 2:
+            case X_AXIS_SYMMETRY:
                 return xAxisSymmetryStatus(status);
-            case 4:
+            case Y_AXIS_SYMMETRY:
                 return yAxisSymmetryStatus(status);
-            case 8:
+            case Z_AXIS_SYMMETRY:
                 return zAxisSymmetryStatus(status);
-            case 16:
+            case P_TO_X_AXIS_SYMMETRY:
                 return perpendicularToXAxisSymmetryStatus(status);
-            case 32:
+            case P_TO_Y_AXIS_SYMMETRY:
                 return perpendicularToYAxisSymmetryStatus(status);
-            case 64:
+            case P_TO_Z_AXIS_SYMMETRY:
                 return perpendicularToZAxisSymmetryStatus(status);
             default:
         }
@@ -600,28 +614,28 @@ public class EvloverUtil {
      * @param status
      * @return
      */
-    public int allSymmetryType(long status) {
+    public int symmetry(long status) {
         int allSymmetryType = 0;
         if (isOriginSymmetry(status)) {
-            allSymmetryType = 1;
+            allSymmetryType |= ORIGIN_SYMMETRY;
         }
         if (isXAxisSymmetry(status)) {
-            allSymmetryType |= 2;
+            allSymmetryType |= X_AXIS_SYMMETRY;
         }
         if (isYAxisSymmetry(status)) {
-            allSymmetryType |= 4;
+            allSymmetryType |= Y_AXIS_SYMMETRY;
         }
         if (isZAxisSymmetry(status)) {
-            allSymmetryType |= 8;
+            allSymmetryType |= Z_AXIS_SYMMETRY;
         }
         if (isPerpendicularToXAxisSymmetry(status)) {
-            allSymmetryType |= 16;
+            allSymmetryType |= P_TO_X_AXIS_SYMMETRY;
         }
         if (isPerpendicularToYAxisSymmetry(status)) {
-            allSymmetryType |= 32;
+            allSymmetryType |= P_TO_Y_AXIS_SYMMETRY;
         }
         if (isPerpendicularToZAxisSymmetry(status)) {
-            allSymmetryType |= 64;
+            allSymmetryType |= P_TO_Z_AXIS_SYMMETRY;
         }
         return allSymmetryType;
     }
@@ -639,30 +653,30 @@ public class EvloverUtil {
      * @param status2
      * @return
      */
-    public int allCommonSymmetryType(long status1, long status2) {
-        int allCommonSymmetryType = 0;
+    public int commonSymmetry(long status1, long status2) {
+        int commonSymmetry = 0;
         if (isOriginSymmetry(status1) && isOriginSymmetry(status2)) {
-            allCommonSymmetryType = 1;
+            commonSymmetry = ORIGIN_SYMMETRY;
         }
         if (isXAxisSymmetry(status1) && isXAxisSymmetry(status2)) {
-            allCommonSymmetryType |= 2;
+            commonSymmetry |= X_AXIS_SYMMETRY;
         }
         if (isYAxisSymmetry(status1) && isYAxisSymmetry(status2)) {
-            allCommonSymmetryType |= 4;
+            commonSymmetry |= Y_AXIS_SYMMETRY;
         }
         if (isZAxisSymmetry(status1) && isZAxisSymmetry(status2)) {
-            allCommonSymmetryType |= 8;
+            commonSymmetry |= Z_AXIS_SYMMETRY;
         }
         if (isPerpendicularToXAxisSymmetry(status1) && isPerpendicularToXAxisSymmetry(status2)) {
-            allCommonSymmetryType |= 16;
+            commonSymmetry |= P_TO_X_AXIS_SYMMETRY;
         }
         if (isPerpendicularToYAxisSymmetry(status1) && isPerpendicularToYAxisSymmetry(status2)) {
-            allCommonSymmetryType |= 32;
+            commonSymmetry |= P_TO_Y_AXIS_SYMMETRY;
         }
         if (isPerpendicularToZAxisSymmetry(status1) && isPerpendicularToZAxisSymmetry(status2)) {
-            allCommonSymmetryType |= 64;
+            commonSymmetry |= P_TO_Z_AXIS_SYMMETRY;
         }
-        return allCommonSymmetryType;
+        return commonSymmetry;
     }
 
     /**
