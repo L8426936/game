@@ -67,7 +67,7 @@ public class EvloverUtil {
      */
     public static char[] randomStatus(int layer, int count) {
         if (count > 3 * layer * (layer + 1) + 1) {
-            return new char[0];
+            return null;
         }
 
         char[] randomStatus = new char[3 * layer * (layer + 1) + 1];
@@ -95,7 +95,7 @@ public class EvloverUtil {
      */
     public static List<char[]> allStatus(int layer, int count) {
         if (count > 3 * layer * (layer + 1) + 1) {
-            return new ArrayList<>(0);
+            return null;
         }
 
         char[] originStatus = new char[3 * layer * (layer + 1) + 1];
@@ -323,38 +323,6 @@ public class EvloverUtil {
             default:
         }
         return z;
-    }
-
-    /**
-     * <p>返回action的对称操作</p>
-     * <p>原点对称: 1</p>
-     * <p>X轴对称: 2</p>
-     * <p>Y轴对称: 4</p>
-     * <p>Z轴对称: 8</p>
-     * <p>垂直于X轴对称: 16</p>
-     * <p>垂直于Y轴对称: 32</p>
-     * <p>垂直于Z轴对称: 64</p>
-     * @param symmetryType
-     * @return
-     */
-    public static int symmetryAction(int action, int symmetryType) {
-        switch (symmetryType) {
-            case X_AXIS_SYMMETRY:
-            case Y_AXIS_SYMMETRY:
-            case Z_AXIS_SYMMETRY:
-            case P_TO_X_AXIS_SYMMETRY:
-            case P_TO_Y_AXIS_SYMMETRY:
-            case P_TO_Z_AXIS_SYMMETRY:
-                switch (action) {
-                    case A:
-                        return C;
-                    case C:
-                        return A;
-                    default:
-                }
-            default:
-        }
-        return action;
     }
 
     /**
@@ -638,45 +606,6 @@ public class EvloverUtil {
             allSymmetryType |= P_TO_Z_AXIS_SYMMETRY;
         }
         return allSymmetryType;
-    }
-
-    /**
-     * <p>返回两个形状的共同对称，每种对称一位二进制保存</p>
-     * <p>原点对称: 1</p>
-     * <p>X轴对称: 2</p>
-     * <p>Y轴对称: 4</p>
-     * <p>Z轴对称: 8</p>
-     * <p>垂直于X轴对称: 16</p>
-     * <p>垂直于Y轴对称: 32</p>
-     * <p>垂直于Z轴对称: 64</p>
-     * @param status1
-     * @param status2
-     * @return
-     */
-    public int commonSymmetry(long status1, long status2) {
-        int commonSymmetry = 0;
-        if (isOriginSymmetry(status1) && isOriginSymmetry(status2)) {
-            commonSymmetry = ORIGIN_SYMMETRY;
-        }
-        if (isXAxisSymmetry(status1) && isXAxisSymmetry(status2)) {
-            commonSymmetry |= X_AXIS_SYMMETRY;
-        }
-        if (isYAxisSymmetry(status1) && isYAxisSymmetry(status2)) {
-            commonSymmetry |= Y_AXIS_SYMMETRY;
-        }
-        if (isZAxisSymmetry(status1) && isZAxisSymmetry(status2)) {
-            commonSymmetry |= Z_AXIS_SYMMETRY;
-        }
-        if (isPerpendicularToXAxisSymmetry(status1) && isPerpendicularToXAxisSymmetry(status2)) {
-            commonSymmetry |= P_TO_X_AXIS_SYMMETRY;
-        }
-        if (isPerpendicularToYAxisSymmetry(status1) && isPerpendicularToYAxisSymmetry(status2)) {
-            commonSymmetry |= P_TO_Y_AXIS_SYMMETRY;
-        }
-        if (isPerpendicularToZAxisSymmetry(status1) && isPerpendicularToZAxisSymmetry(status2)) {
-            commonSymmetry |= P_TO_Z_AXIS_SYMMETRY;
-        }
-        return commonSymmetry;
     }
 
     /**

@@ -1,10 +1,16 @@
 package solved.hexagoneliminate;
 
+import com.sun.jna.platform.win32.GDI32Util;
+import com.sun.jna.platform.win32.User32;
+import com.sun.jna.platform.win32.WinDef;
 import org.opencv.core.*;
 import org.opencv.highgui.HighGui;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -16,7 +22,7 @@ public class HexagonEliminatePlayer {
 
     private static final long[] SHAPE_TYPE_HASH = new long[25];
 
-    private static final String DATA_PATH = Paths.get(System.getProperty("user.dir"), "src", "solved", "hexagoneliminate", "data").toString() + File.separator;
+    private static final String DATA_PATH = Paths.get(System.getProperty("user.dir"), "src", "main", "java", "solved", "hexagoneliminate", "data").toString() + File.separator;
     private static final Runtime runtime = Runtime.getRuntime();
 
     static {
@@ -34,7 +40,7 @@ public class HexagonEliminatePlayer {
         }
     }
 
-    public static void autoPlay() {
+    public static void autoPlayOnMobile() {
         try {
             screenshot();
         } catch (Exception e) {
@@ -42,35 +48,39 @@ public class HexagonEliminatePlayer {
         }
         String winname = "按指示完成操作后，按下任意键";
         Rect[] statusRect = analysisStatusRect();
-        while (true) {
+        long oldStatus = 0;
+        for (int failCount = 0; failCount < 15; failCount++) {
             try {
                 long status = analysisStatus(statusRect);
-                ShapeType[] shapeTypes = analysisShape();
-                if (shapeTypes != null) {
-                    HexagonEliminateTree.Move move = HexagonEliminateTree.bestMove(status, shapeTypes);
-                    if (move != null) {
-                        HexagonEliminateUtil.printlnStatus(HexagonEliminateUtil.longToArray(status));
-                        System.out.println();
+                if (oldStatus != status) {
+                    oldStatus = status;
+                    ShapeType[] shapeTypes = analysisShape();
+                    if (shapeTypes != null) {
+                        HexagonEliminateTree.Move move = HexagonEliminateTree.bestMove(status, shapeTypes);
+                        if (move != null) {
+                            HexagonEliminateUtil.printlnStatus(HexagonEliminateUtil.longToArray(status));
+                            System.out.println();
 
-                        Mat image = Imgcodecs.imread(DATA_PATH + "hexagoneliminate.png");
+                            Mat image = Imgcodecs.imread(DATA_PATH + "hexagoneliminate.png");
 
-                        Rect destRect = destRect(image, statusRect, move.getShapePosition());
-                        Imgproc.rectangle(image, shapeTypes[move.getShapeTypeIndex()].rect, new Scalar(0, 0, 255), Imgproc.LINE_4);
+                            Rect destRect = destRect(image, statusRect, move.getShapePosition());
+                            Imgproc.rectangle(image, shapeTypes[move.getShapeTypeIndex()].rect, new Scalar(0, 0, 255), Imgproc.LINE_4);
 
-                        Imgproc.resize(image, image, new Size(image.width() * 0.4, image.height() * 0.4));
-                        HighGui.imshow(winname, image);
+                            Imgproc.resize(image, image, new Size(image.width() * 0.4, image.height() * 0.4));
+                            HighGui.imshow(winname, image);
 
-                        //////////////////// 不使用move方法
-                        // HighGui.waitKey();
-                        ////////////////////
+                            //////////////////// 不使用move方法
+                            // HighGui.waitKey();
+                            ////////////////////
 
-                        //////////////////////// 使用move方法
-                        HighGui.waitKey(1);
-                        move(move.getShapeTypeIndex(), shapeTypes[move.getShapeTypeIndex()].rect, destRect, (int) (image.height() / 0.4));
-                        Thread.sleep(750);
-                        ////////////////////////
+                            //////////////////////// 使用move方法
+                            HighGui.waitKey(1);
+                            move(move.getShapeTypeIndex(), shapeTypes[move.getShapeTypeIndex()].rect, destRect, (int) (image.height() / 0.4));
+                            ////////////////////////
 
-                        HighGui.windows.get(winname).alreadyUsed = false;
+                            HighGui.windows.get(winname).alreadyUsed = false;
+                            failCount = 0;
+                        }
                     }
                 }
                 screenshot();
@@ -78,6 +88,79 @@ public class HexagonEliminatePlayer {
                 e.printStackTrace();
             }
         }
+        System.exit(0);
+    }
+
+    public static void autoPlayOnPC() {
+        User32 instance = User32.INSTANCE;
+        WinDef.HWND window = instance.FindWindowEx(instance.FindWindow(null, "六边形消消"), null, null, "MINIGAMEVIEW");
+        if (window != null) {
+            try {
+                ImageIO.write(GDI32Util.getScreenshot(window), "png", Paths.get(DATA_PATH, "hexagoneliminate.png").toFile());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            Rect[] statusRect = analysisStatusRect();
+            // 显示器缩放百分比
+            AffineTransform defaultTransform = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().getDefaultTransform();
+            double scaleX = defaultTransform.getScaleX();
+            double scaleY = defaultTransform.getScaleY();
+
+            int WM_MOUSEMOVE = 0x200;
+            int WM_LBUTTONDOWN = 0x201;
+            int WM_LBUTTONUP = 0x202;
+
+            for (int failCount = 0; failCount < 15; failCount++) {
+                try {
+                    long status = analysisStatus(statusRect);
+                    ShapeType[] shapeTypes = analysisShape();
+                    if (shapeTypes != null) {
+                        HexagonEliminateTree.Move move = HexagonEliminateTree.bestMove(status, shapeTypes);
+                        if (move != null) {
+                            HexagonEliminateUtil.printlnStatus(HexagonEliminateUtil.longToArray(status));
+                            System.out.println();
+
+                            Mat origin = Imgcodecs.imread(DATA_PATH + "hexagoneliminate.png");
+
+                            Rect srcRect = shapeTypes[move.getShapeTypeIndex()].rect;
+                            Rect destRect = destRect(origin, statusRect, move.getShapePosition());
+                            Imgproc.rectangle(origin, srcRect, new Scalar(0, 0, 255), Imgproc.LINE_4);
+
+                            Mat image = origin.clone();
+                            Imgproc.resize(origin, image, new Size(origin.width() / scaleX, origin.height() / scaleY));
+                            HighGui.imshow("分析结果", image);
+                            HighGui.waitKey(1);
+
+                            // (x & 0xffff) | (y << 16)
+                            long srcPosition = ((srcRect.x + (srcRect.width / 2)) & 0xffff) | ((srcRect.y + (srcRect.height / 2)) << 16);
+                            instance.SendMessage(window, WM_LBUTTONDOWN, null, new WinDef.LPARAM(srcPosition));
+                            Thread.sleep(50);
+
+                            long floatPosition = ((srcRect.x + (srcRect.width / 2) + ((move.getShapeTypeIndex() - 1) * (srcRect.width / 8))) & 0xffff) | ((srcRect.y + (srcRect.height / 2) + (origin.height() - srcRect.y - srcRect.height)) << 16);
+                            instance.SendMessage(window, WM_MOUSEMOVE, null, new WinDef.LPARAM(floatPosition));
+                            Thread.sleep(50);
+
+                            ImageIO.write(GDI32Util.getScreenshot(window), "png", Paths.get(DATA_PATH, "hexagoneliminate.png").toFile());
+                            Rect floatRect = analysisShape()[move.getShapeTypeIndex()].rect;
+
+                            long destPosition = ((destRect.x + (destRect.width / 2)) & 0xffff) | (((destRect.y + (destRect.height / 2)) + ((srcRect.y + (srcRect.height / 2) + (origin.height() - srcRect.y - srcRect.height)) - (floatRect.y + (floatRect.height / 2)))) << 16);
+                            instance.SendMessage(window, WM_MOUSEMOVE, null, new WinDef.LPARAM(destPosition));
+                            Thread.sleep(50);
+
+                            instance.SendMessage(window, WM_LBUTTONUP, null, null);
+                            Thread.sleep(350);
+
+                            failCount = 0;
+                        }
+                    }
+                    ImageIO.write(GDI32Util.getScreenshot(window), "png", Paths.get(DATA_PATH, "hexagoneliminate.png").toFile());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        System.exit(0);
     }
 
     /**
@@ -150,15 +233,26 @@ public class HexagonEliminatePlayer {
      * @return
      */
     private static long analysisStatus(Rect[] rects) {
+        // 点：255, 140, 137
+        // 线：150, 223, 113
+        // 堆：129, 243, 206
+        // 半环：110, 162, 245
+        // 钩：138, 220, 255
+        // 钩：181, 137, 254
         Mat origin = Imgcodecs.imread(DATA_PATH + "hexagoneliminate.png");
         long status = 0;
         byte[] data = new byte[3];
-        byte gray = 76, deviation = 10;
+        int[][] colors = {{255, 140, 137}, {150, 223, 113}, {129, 243, 206}, {110, 162, 245}, {138, 220, 255}, {181, 137, 254}};
+        int deviation = 10;
         for (int i = 0; i < rects.length; i++) {
             Rect rect = rects[i];
             origin.get(rect.y + (rect.height >> 1), rect.x + (rect.width >> 1), data);
-            if (Math.abs(data[0] - gray) > deviation && Math.abs(data[1] - gray) > deviation && Math.abs(data[2] - gray) > deviation) {
-                status |= 1L << i;
+            for (int j = 0; j < colors.length; j++) {
+                int[] color = colors[j];
+                if (Math.abs((data[0] & 0XFF) - color[0]) < deviation && Math.abs((data[1] & 0XFF) - color[1]) < deviation && Math.abs((data[2] & 0XFF) - color[2]) < deviation) {
+                    status |= 1L << i;
+                    break;
+                }
             }
         }
         return status;
@@ -193,7 +287,7 @@ public class HexagonEliminatePlayer {
         Scalar lowHSV = new Scalar(3);
         Scalar highHSV = new Scalar(3);
         Mat mat = new Mat();
-        Mat hexagon = new Mat(hsv.rows(), hsv.cols(), CvType.CV_8U);
+        Mat hexagon = Mat.zeros(hsv.rows(), hsv.cols(), CvType.CV_8U);
         for (int i = 0; i < low.length; i++) {
             lowHSV.set(low[i]);
             highHSV.set(high[i]);
@@ -249,7 +343,7 @@ public class HexagonEliminatePlayer {
         Scalar lowHSV = new Scalar(3);
         Scalar highHSV = new Scalar(3);
         Mat mat = new Mat();
-        Mat image = new Mat(hsv.rows(), hsv.cols(), CvType.CV_8U);
+        Mat image = Mat.zeros(hsv.rows(), hsv.cols(), CvType.CV_8U);
         for (int i = 0; i < low.length; i++) {
             lowHSV.set(low[i]);
             highHSV.set(high[i]);
@@ -264,7 +358,7 @@ public class HexagonEliminatePlayer {
             return null;
         }
         ShapeType[] shapes = new ShapeType[3];
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < shapes.length; i++) {
             Rect rect = Imgproc.boundingRect(contours.get(i));
             ShapeType shape = new ShapeType();
             shape.rect = rect;

@@ -179,7 +179,7 @@ public class EvloverTree {
             while (!queue.isEmpty()) {
                 EvloverNode parentNode = queue.poll();
                 long parentStatus = parentNode.getStatus();
-                int commonSymmetry = evloverUtil.symmetry(parentStatus) & endStatusSymmetry;
+                int commonSymmetry = endStatusSymmetry > 0 ? evloverUtil.symmetry(parentStatus) & endStatusSymmetry : 0;
                 // 记录已经点击过的位置，对称位置无需再次点击
                 long logClickIndex = 0;
                 for (int value : clickIndex) {
@@ -219,11 +219,13 @@ public class EvloverTree {
                         logClickIndex |= 1L << index;
                         for (int symmetryType = 1; symmetryType <= commonSymmetry; symmetryType <<= 1) {
                             // 记录对称的点击位置
-                            int symmetryX = EvloverUtil.symmetryX(x, y, z, symmetryType & commonSymmetry);
-                            int symmetryY = EvloverUtil.symmetryY(x, y, z, symmetryType & commonSymmetry);
-                            int symmetryZ = EvloverUtil.symmetryZ(x, y, z, symmetryType & commonSymmetry);
-                            int symmetryIndex = evloverUtil.index(symmetryX, symmetryY, symmetryZ);
-                            logClickIndex |= 1L << symmetryIndex;
+                            if ((symmetryType & commonSymmetry) > 0) {
+                                int symmetryX = EvloverUtil.symmetryX(x, y, z, symmetryType & commonSymmetry);
+                                int symmetryY = EvloverUtil.symmetryY(x, y, z, symmetryType & commonSymmetry);
+                                int symmetryZ = EvloverUtil.symmetryZ(x, y, z, symmetryType & commonSymmetry);
+                                int symmetryIndex = evloverUtil.index(symmetryX, symmetryY, symmetryZ);
+                                logClickIndex |= 1L << symmetryIndex;
+                            }
                         }
                     }
                 }
@@ -286,8 +288,8 @@ public class EvloverTree {
                 for (int i = 0, j = queue.size(); i < j; i++) {
                     EvloverNode parentNode = queue.poll();
                     long parentStatus = parentNode.getStatus();
-                        for (int k = startIndex; k != borderIndex; k += offset) {
-                            int x = evloverUtil.indexToX(clickIndex[k]), y = evloverUtil.indexToY(clickIndex[k]), z = evloverUtil.indexToZ(clickIndex[k]);
+                    for (int k = startIndex; k != borderIndex; k += offset) {
+                        int x = evloverUtil.indexToX(clickIndex[k]), y = evloverUtil.indexToY(clickIndex[k]), z = evloverUtil.indexToZ(clickIndex[k]);
                         for (int action : actions) {
                             long childStatus = nextStatus(parentStatus, x, y, z, action);
                             if (avlTree.get(childStatus) == null) {
@@ -316,6 +318,7 @@ public class EvloverTree {
     }
 
     /**
+     * <p>有bug，可能无法找到最优解</p>
      * <p>双向广度优先搜索，以每个节点和目标节点的共同对称去除对称节点</p>
      * <p>BBFS: bidirectional breadth first search</p>
      * @param startStatus
@@ -374,7 +377,7 @@ public class EvloverTree {
                 for (int i = 0, j = queue.size(); i < j; i++) {
                     EvloverNode parentNode = queue.poll();
                     long parentStatus = parentNode.getStatus();
-                    int commonSymmetry = evloverUtil.symmetry(parentStatus) & statusSymmetry;
+                    int commonSymmetry = statusSymmetry > 0 ? evloverUtil.symmetry(parentStatus) & statusSymmetry : 0;
                     // 记录已经点击过的位置，对称位置无需再次点击
                     long logClickIndex = 0;
                     for (int k = startIndex; k != borderIndex; k += offset) {
@@ -415,11 +418,13 @@ public class EvloverTree {
                         logClickIndex |= 1L << index;
                         for (int symmetryType = 1; symmetryType <= commonSymmetry; symmetryType <<= 1) {
                             // 记录对称的点击位置
-                            int symmetryX = EvloverUtil.symmetryX(x, y, z, symmetryType & commonSymmetry);
-                            int symmetryY = EvloverUtil.symmetryY(x, y, z, symmetryType & commonSymmetry);
-                            int symmetryZ = EvloverUtil.symmetryZ(x, y, z, symmetryType & commonSymmetry);
-                            int symmetryIndex = evloverUtil.index(symmetryX, symmetryY, symmetryZ);
-                            logClickIndex |= 1L << symmetryIndex;
+                            if ((symmetryType & commonSymmetry) > 0) {
+                                int symmetryX = EvloverUtil.symmetryX(x, y, z, symmetryType & commonSymmetry);
+                                int symmetryY = EvloverUtil.symmetryY(x, y, z, symmetryType & commonSymmetry);
+                                int symmetryZ = EvloverUtil.symmetryZ(x, y, z, symmetryType & commonSymmetry);
+                                int symmetryIndex = evloverUtil.index(symmetryX, symmetryY, symmetryZ);
+                                logClickIndex |= 1L << symmetryIndex;
+                            }
                         }
                     }
                 }
@@ -454,8 +459,8 @@ public class EvloverTree {
                 long parentStatus = parentNode.getStatus();
                 openAVLTree.remove(parentStatus);
                 if (closeAVLTree.put(parentStatus, parentNode)) {
-                    for (int i = 0; i < clickIndex.length; i++) {
-                        int x = evloverUtil.indexToX(clickIndex[i]), y = evloverUtil.indexToY(clickIndex[i]), z = evloverUtil.indexToZ(clickIndex[i]);
+                    for (int index : clickIndex) {
+                        int x = evloverUtil.indexToX(index), y = evloverUtil.indexToY(index), z = evloverUtil.indexToZ(index);
                         for (int action : actions) {
                             long childStatus = nextStatus(parentStatus, x, y, z, action);
                             EvloverNode evloverNode = closeAVLTree.get(childStatus);

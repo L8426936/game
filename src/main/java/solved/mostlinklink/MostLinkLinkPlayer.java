@@ -31,7 +31,7 @@ public class MostLinkLinkPlayer {
      * <p>CHALLENGE：挑战赛模式</p>
      */
     public static final int OPENCV_ANALYSIS = 0, OPENCV_TEMPLATE_ANALYSIS = 1, ANALYSIS = 2, RANK_LIST = 0, CHALLENGE = 1;
-    private static final String IMAGE_PATH = Paths.get(System.getProperty("user.dir"), "src", "solved", "mostlinklink", "data").toString() + File.separator;
+    private static final String IMAGE_PATH = Paths.get(System.getProperty("user.dir"), "src", "main", "java", "solved", "mostlinklink", "data").toString() + File.separator;
     private static final Runtime runtime = Runtime.getRuntime();
     private static GameInfo.Point closePoint, nextPoint;
 
@@ -459,11 +459,11 @@ public class MostLinkLinkPlayer {
         Mat result = new Mat();
         Imgproc.matchTemplate(image, template, result, Imgproc.TM_CCOEFF_NORMED);
         Core.MinMaxLocResult minMaxLocResult = Core.minMaxLoc(result);
-        org.opencv.core.Point maxLoc = minMaxLocResult.maxLoc;
+        Point maxLoc = minMaxLocResult.maxLoc;
         if (minMaxLocResult.maxVal > 0.95) {
             Imgproc.rectangle(source,
-                    new org.opencv.core.Point(maxLoc.x, maxLoc.y),
-                    new org.opencv.core.Point(maxLoc.x + template.width(), maxLoc.y + template.height()),
+                    new Point(maxLoc.x, maxLoc.y),
+                    new Point(maxLoc.x + template.width(), maxLoc.y + template.height()),
                     new Scalar(0, 0, 255), Imgproc.LINE_4);
             showMat("分析结果", source);
             return new GameInfo.Point((int) (maxLoc.x + (template.width() / 2)), (int) (maxLoc.y + (template.height() / 2)));

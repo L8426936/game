@@ -169,8 +169,11 @@ public class HexagonEliminateTree {
         }
         // for (int i = 0; i < SHAPE_POSITION.length; i++) {
         //     System.out.println("type: " + i);
-        //     HexagonEliminateUtil.printlnStatus(HexagonEliminateUtil.longToArray(SHAPE_POSITION[i][0]));
-        //     System.out.println();
+        //     for (int j = 0; j < SHAPE_POSITION[i].length; j++) {
+        //         HexagonEliminateUtil.printlnStatus(HexagonEliminateUtil.longToArray(SHAPE_POSITION[i][j]));
+        //         System.out.println();
+        //     }
+        //     System.out.println("---------------------------------");
         // }
     }
 
@@ -180,7 +183,6 @@ public class HexagonEliminateTree {
             sequence[i] = i;
         }
         HexagonEliminateNode best = new HexagonEliminateNode();
-        best.setScore(Integer.MIN_VALUE);
         int count = 0;
         do {
             Queue<HexagonEliminateNode> treeLayer = new LinkedList<>();
@@ -196,15 +198,12 @@ public class HexagonEliminateTree {
                             HexagonEliminateNode hexagonEliminateNode = move(parent, position[m]);
                             hexagonEliminateNode.setShapeTypeIndex(sequence[i]);
                             treeLayer.offer(hexagonEliminateNode);
+                            if (hexagonEliminateNode.getScore() > best.getScore()) {
+                                best = hexagonEliminateNode;
+                            }
+                            count++;
                         }
                     }
-                }
-            }
-            count += treeLayer.size();
-            while (!treeLayer.isEmpty()) {
-                HexagonEliminateNode hexagonEliminateNode = treeLayer.poll();
-                if (hexagonEliminateNode.getScore() > best.getScore()) {
-                    best = hexagonEliminateNode;
                 }
             }
         } while (nextSequence(sequence));

@@ -5,7 +5,6 @@ import org.opencv.highgui.HighGui;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -13,7 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class KlotskiPlayer {
-    private static final Path BASE_PATH = Paths.get(System.getProperty("user.dir"), "src", "solved", "klotski", "data");
+    private static final Path BASE_PATH = Paths.get(System.getProperty("user.dir"), "src", "main", "java", "solved", "klotski", "data");
     private static final Runtime runtime = Runtime.getRuntime();
     private static int MARGIN_LEFT = Integer.MAX_VALUE, MARGIN_TOP = Integer.MAX_VALUE, SIDE = Integer.MAX_VALUE;
     private static Rect nextRound;
@@ -23,42 +22,37 @@ public class KlotskiPlayer {
     }
 
     public static void autoPlay(int mode) {
-        try {
-            if (Files.notExists(Paths.get(BASE_PATH.toString()))) {
-                Files.createDirectories(Paths.get(BASE_PATH.toString()));
-            }
-            KlotskiTree klotskiTree = new KlotskiTree();
-            long oldStatus = 0;
-            for (int equalStatusCount = 0; equalStatusCount < 5;) {
+        KlotskiTree klotskiTree = new KlotskiTree();
+        long oldStatus = 0;
+        for (int equalStatusCount = 0; equalStatusCount < 5; equalStatusCount++) {
+            try {
                 long startTime = System.currentTimeMillis();
                 long flagTime = startTime;
                 long status = analysisStatus();
-                if (oldStatus == status) {
-                    equalStatusCount++;
-                } else {
-                    equalStatusCount = 0;
-                }
-                oldStatus = status;
-                if (checkStatus(status)) {
-                    System.out.format("截图分析耗时%dms%n", System.currentTimeMillis() - flagTime);
-                    printlnStatus(status);
-                    System.out.println();
-                    flagTime = System.currentTimeMillis();
-                    List<KlotskiNode> klotskiNodes = klotskiTree.BFS(status, mode);
-                    System.out.format("搜索耗时%dms%n", System.currentTimeMillis() - flagTime);
-                    if (klotskiNodes != null) {
+                if (oldStatus != status) {
+                    oldStatus = status;
+                    if (checkStatus(status)) {
+                        System.out.format("截图分析耗时%dms%n", System.currentTimeMillis() - flagTime);
+                        printlnStatus(status);
+                        System.out.println();
                         flagTime = System.currentTimeMillis();
-                        move(klotskiNodes);
-                        System.out.format("闯关耗时%dms%n", System.currentTimeMillis() - flagTime);
-                        next();
-                        System.out.format("总耗时%dms%n%n", System.currentTimeMillis() - startTime);
+                        List<KlotskiNode> klotskiNodes = klotskiTree.BFS(status, mode);
+                        System.out.format("搜索耗时%dms%n", System.currentTimeMillis() - flagTime);
+                        if (klotskiNodes != null) {
+                            flagTime = System.currentTimeMillis();
+                            move(klotskiNodes);
+                            System.out.format("闯关耗时%dms%n", System.currentTimeMillis() - flagTime);
+                            next();
+                            System.out.format("总耗时%dms%n%n", System.currentTimeMillis() - startTime);
+                            equalStatusCount = 0;
+                        }
                     }
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            System.exit(0);
-        } catch (Exception e) {
-            e.printStackTrace();
         }
+        System.exit(0);
     }
 
     /**
@@ -203,7 +197,7 @@ public class KlotskiPlayer {
         Mat result = new Mat();
         Imgproc.matchTemplate(image, template, result, Imgproc.TM_CCOEFF_NORMED);
         Core.MinMaxLocResult minMaxLocResult = Core.minMaxLoc(result);
-        org.opencv.core.Point maxLoc = minMaxLocResult.maxLoc;
+        Point maxLoc = minMaxLocResult.maxLoc;
         if (minMaxLocResult.maxVal > 0.95) {
             return new Rect((int) maxLoc.x, (int) maxLoc.y, template.width(), template.height());
         }
