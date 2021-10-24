@@ -1,5 +1,6 @@
 package solved.hexagoneliminate;
 
+import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.GDI32Util;
 import com.sun.jna.platform.win32.User32;
 import com.sun.jna.platform.win32.WinDef;
@@ -53,34 +54,35 @@ public class HexagonEliminatePlayer {
             try {
                 long status = analysisStatus(statusRect);
                 if (oldStatus != status) {
-                    oldStatus = status;
-                    ShapeType[] shapeTypes = analysisShape();
-                    if (shapeTypes != null) {
-                        HexagonEliminateTree.Move move = HexagonEliminateTree.bestMove(status, shapeTypes);
-                        if (move != null) {
-                            HexagonEliminateUtil.printlnStatus(HexagonEliminateUtil.longToArray(status));
-                            System.out.println();
+                    failCount = 0;
+                }
+                oldStatus = status;
 
-                            Mat image = Imgcodecs.imread(DATA_PATH + "hexagoneliminate.png");
+                ShapeType[] shapeTypes = analysisShape();
+                if (shapeTypes != null) {
+                    HexagonEliminateTree.Move move = HexagonEliminateTree.bestMove(status, shapeTypes);
+                    if (move != null) {
+                        HexagonEliminateUtil.printlnStatus(HexagonEliminateUtil.longToArray(status));
+                        System.out.println();
 
-                            Rect destRect = destRect(image, statusRect, move.getShapePosition());
-                            Imgproc.rectangle(image, shapeTypes[move.getShapeTypeIndex()].rect, new Scalar(0, 0, 255), Imgproc.LINE_4);
+                        Mat image = Imgcodecs.imread(DATA_PATH + "hexagoneliminate.png");
 
-                            Imgproc.resize(image, image, new Size(image.width() * 0.4, image.height() * 0.4));
-                            HighGui.imshow(winname, image);
+                        Rect destRect = destRect(image, statusRect, move.getShapePosition());
+                        Imgproc.rectangle(image, shapeTypes[move.getShapeTypeIndex()].rect, new Scalar(0, 0, 255), Imgproc.LINE_4);
 
-                            //////////////////// 不使用move方法
-                            // HighGui.waitKey();
-                            ////////////////////
+                        Imgproc.resize(image, image, new Size(image.width() * 0.4, image.height() * 0.4));
+                        HighGui.imshow(winname, image);
 
-                            //////////////////////// 使用move方法
-                            HighGui.waitKey(1);
-                            move(move.getShapeTypeIndex(), shapeTypes[move.getShapeTypeIndex()].rect, destRect, (int) (image.height() / 0.4));
-                            ////////////////////////
+                        //////////////////// 不使用move方法
+                        // HighGui.waitKey();
+                        ////////////////////
 
-                            HighGui.windows.get(winname).alreadyUsed = false;
-                            failCount = 0;
-                        }
+                        //////////////////////// 使用move方法
+                        HighGui.waitKey(1);
+                        move(move.getShapeTypeIndex(), shapeTypes[move.getShapeTypeIndex()].rect, destRect, (int) (image.height() / 0.4));
+                        ////////////////////////
+
+                        HighGui.windows.get(winname).alreadyUsed = false;
                     }
                 }
                 screenshot();
@@ -93,74 +95,79 @@ public class HexagonEliminatePlayer {
 
     public static void autoPlayOnPC() {
         User32 instance = User32.INSTANCE;
-        WinDef.HWND window = instance.FindWindowEx(instance.FindWindow(null, "六边形消消"), null, null, "MINIGAMEVIEW");
-        if (window != null) {
-            try {
-                ImageIO.write(GDI32Util.getScreenshot(window), "png", Paths.get(DATA_PATH, "hexagoneliminate.png").toFile());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            Rect[] statusRect = analysisStatusRect();
-            // 显示器缩放百分比
-            AffineTransform defaultTransform = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().getDefaultTransform();
-            double scaleX = defaultTransform.getScaleX();
-            double scaleY = defaultTransform.getScaleY();
-
-            int WM_MOUSEMOVE = 0x200;
-            int WM_LBUTTONDOWN = 0x201;
-            int WM_LBUTTONUP = 0x202;
-
-            for (int failCount = 0; failCount < 15; failCount++) {
+        instance.EnumChildWindows(instance.FindWindow(null, "六边形消消"), (window, data) -> {
+            if (window != null) {
                 try {
-                    long status = analysisStatus(statusRect);
-                    ShapeType[] shapeTypes = analysisShape();
-                    if (shapeTypes != null) {
-                        HexagonEliminateTree.Move move = HexagonEliminateTree.bestMove(status, shapeTypes);
-                        if (move != null) {
-                            HexagonEliminateUtil.printlnStatus(HexagonEliminateUtil.longToArray(status));
-                            System.out.println();
-
-                            Mat origin = Imgcodecs.imread(DATA_PATH + "hexagoneliminate.png");
-
-                            Rect srcRect = shapeTypes[move.getShapeTypeIndex()].rect;
-                            Rect destRect = destRect(origin, statusRect, move.getShapePosition());
-                            Imgproc.rectangle(origin, srcRect, new Scalar(0, 0, 255), Imgproc.LINE_4);
-
-                            Mat image = origin.clone();
-                            Imgproc.resize(origin, image, new Size(origin.width() / scaleX, origin.height() / scaleY));
-                            HighGui.imshow("分析结果", image);
-                            HighGui.waitKey(1);
-
-                            // (x & 0xffff) | (y << 16)
-                            long srcPosition = ((srcRect.x + (srcRect.width / 2)) & 0xffff) | ((srcRect.y + (srcRect.height / 2)) << 16);
-                            instance.SendMessage(window, WM_LBUTTONDOWN, null, new WinDef.LPARAM(srcPosition));
-                            Thread.sleep(50);
-
-                            long floatPosition = ((srcRect.x + (srcRect.width / 2) + ((move.getShapeTypeIndex() - 1) * (srcRect.width / 8))) & 0xffff) | ((srcRect.y + (srcRect.height / 2) + (origin.height() - srcRect.y - srcRect.height)) << 16);
-                            instance.SendMessage(window, WM_MOUSEMOVE, null, new WinDef.LPARAM(floatPosition));
-                            Thread.sleep(50);
-
-                            ImageIO.write(GDI32Util.getScreenshot(window), "png", Paths.get(DATA_PATH, "hexagoneliminate.png").toFile());
-                            Rect floatRect = analysisShape()[move.getShapeTypeIndex()].rect;
-
-                            long destPosition = ((destRect.x + (destRect.width / 2)) & 0xffff) | (((destRect.y + (destRect.height / 2)) + ((srcRect.y + (srcRect.height / 2) + (origin.height() - srcRect.y - srcRect.height)) - (floatRect.y + (floatRect.height / 2)))) << 16);
-                            instance.SendMessage(window, WM_MOUSEMOVE, null, new WinDef.LPARAM(destPosition));
-                            Thread.sleep(50);
-
-                            instance.SendMessage(window, WM_LBUTTONUP, null, null);
-                            Thread.sleep(350);
-
-                            failCount = 0;
-                        }
-                    }
                     ImageIO.write(GDI32Util.getScreenshot(window), "png", Paths.get(DATA_PATH, "hexagoneliminate.png").toFile());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+
+                Rect[] statusRect = analysisStatusRect();
+                // 显示器缩放百分比
+                AffineTransform defaultTransform = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().getDefaultTransform();
+                double scaleX = defaultTransform.getScaleX();
+                double scaleY = defaultTransform.getScaleY();
+
+                int WM_MOUSEMOVE = 0x200;
+                int WM_LBUTTONDOWN = 0x201;
+                int WM_LBUTTONUP = 0x202;
+                long oldStatus = 0;
+
+                for (int failCount = 0; failCount < 15; failCount++) {
+                    try {
+                        long status = analysisStatus(statusRect);
+                        if (oldStatus != status) {
+                            failCount = 0;
+                        }
+                        oldStatus = status;
+                        ShapeType[] shapeTypes = analysisShape();
+                        if (shapeTypes != null) {
+                            HexagonEliminateTree.Move move = HexagonEliminateTree.bestMove(status, shapeTypes);
+                            if (move != null) {
+                                HexagonEliminateUtil.printlnStatus(HexagonEliminateUtil.longToArray(status));
+                                System.out.println();
+
+                                Mat origin = Imgcodecs.imread(DATA_PATH + "hexagoneliminate.png");
+
+                                Rect srcRect = shapeTypes[move.getShapeTypeIndex()].rect;
+                                Rect destRect = destRect(origin, statusRect, move.getShapePosition());
+                                Imgproc.rectangle(origin, srcRect, new Scalar(0, 0, 255), Imgproc.LINE_4);
+
+                                Mat image = origin.clone();
+                                Imgproc.resize(origin, image, new Size(origin.width() / scaleX, origin.height() / scaleY));
+                                HighGui.imshow("分析结果", image);
+                                HighGui.waitKey(1);
+
+                                // (x & 0xffff) | (y << 16)
+                                long srcPosition = ((srcRect.x + (srcRect.width / 2)) & 0xffff) | ((srcRect.y + (srcRect.height / 2)) << 16);
+                                instance.SendMessage(window, WM_LBUTTONDOWN, null, new WinDef.LPARAM(srcPosition));
+                                Thread.sleep(50);
+
+                                long floatPosition = ((srcRect.x + (srcRect.width / 2) + ((move.getShapeTypeIndex() - 1) * (srcRect.width / 8))) & 0xffff) | ((srcRect.y + (srcRect.height / 2) + (origin.height() - srcRect.y - srcRect.height)) << 16);
+                                instance.SendMessage(window, WM_MOUSEMOVE, null, new WinDef.LPARAM(floatPosition));
+                                Thread.sleep(50);
+
+                                ImageIO.write(GDI32Util.getScreenshot(window), "png", Paths.get(DATA_PATH, "hexagoneliminate.png").toFile());
+                                Rect floatRect = analysisShape()[move.getShapeTypeIndex()].rect;
+
+                                long destPosition = ((destRect.x + (destRect.width / 2)) & 0xffff) | (((destRect.y + (destRect.height / 2)) + ((srcRect.y + (srcRect.height / 2) + (origin.height() - srcRect.y - srcRect.height)) - (floatRect.y + (floatRect.height / 2)))) << 16);
+                                instance.SendMessage(window, WM_MOUSEMOVE, null, new WinDef.LPARAM(destPosition));
+                                Thread.sleep(50);
+
+                                instance.SendMessage(window, WM_LBUTTONUP, null, null);
+                                Thread.sleep(350);
+                            }
+                        }
+                        ImageIO.write(GDI32Util.getScreenshot(window), "png", Paths.get(DATA_PATH, "hexagoneliminate.png").toFile());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
             }
-        }
-        System.exit(0);
+            System.exit(0);
+            return false;
+        }, Pointer.NULL);
     }
 
     /**

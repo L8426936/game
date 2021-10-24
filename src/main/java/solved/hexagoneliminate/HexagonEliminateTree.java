@@ -261,11 +261,11 @@ public class HexagonEliminateTree {
                 eliminateLines |= eliminateLine;
                 eliminateLineCount++;
             } else {
-                // 铺满消除线的数量越多越好
+                // 占用块越少越好，剩余的空间多
                 score += 5 * HexagonEliminateUtil.bitCount(ELIMINATE_LINE[i] ^ eliminateLine);
             }
         }
-        score += (25 * eliminateLineCount) * HexagonEliminateUtil.bitCount(eliminateLines);
+        score += 25 * eliminateLineCount * HexagonEliminateUtil.bitCount(eliminateLines);
 
         // 越贴近最外环最好
         childStatus ^= eliminateLines;
