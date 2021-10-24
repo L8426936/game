@@ -504,10 +504,70 @@ public class EvloverTree {
                                 evloverNode.setScore(evloverNode.getStep() + score(childStatus, endLongStatus));
                                 queue.offer(evloverNode);
                                 openAVLTree.put(childStatus, evloverNode);
-                                closeAVLTree.remove(parentStatus);
+                                closeAVLTree.remove(childStatus);
                             }
                         }
                     }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * <p>不一定能找到最优解，结果，搜索时间，空间，取决N的取值</p>
+     * @param startStatus
+     * @param endStatus
+     * @param N
+     * @return
+     */
+    public List<EvloverNode> beamSearch(char[] startStatus, char[] endStatus, int N) {
+        long startLongStatus = EvloverUtil.arrayToLong(startStatus);
+        long endLongStatus = EvloverUtil.arrayToLong(endStatus);
+
+        if (startLongStatus != endLongStatus && EvloverUtil.bitCount(startLongStatus) == EvloverUtil.bitCount(endLongStatus)) {
+            Queue<EvloverNode> queue = new LinkedList<>();
+            AVLTree<EvloverNode> avlTree = new AVLTree<>();
+
+            EvloverNode rootNode = new EvloverNode();
+            rootNode.setStatus(startLongStatus);
+
+            queue.offer(rootNode);
+
+            int[] actions = {EvloverUtil.P, EvloverUtil.C, EvloverUtil.A};
+            while (!queue.isEmpty()) {
+                Queue<EvloverNode> treeLayer = new PriorityQueue<>(Comparator.comparingInt(EvloverNode::getScore));
+                while (!queue.isEmpty()) {
+                    EvloverNode parentNode = queue.poll();
+                    long parentStatus = parentNode.getStatus();
+                    for (int index : clickIndex) {
+                        int x = evloverUtil.indexToX(index), y = evloverUtil.indexToY(index), z = evloverUtil.indexToZ(index);
+                        for (int action : actions) {
+                            long childStatus = nextStatus(parentStatus, x, y, z, action);
+                            if (avlTree.get(childStatus) == null) {
+                                EvloverNode childNode = new EvloverNode();
+                                childNode.setParent(parentNode);
+                                childNode.setStatus(childStatus);
+                                childNode.setX(x);
+                                childNode.setY(y);
+                                childNode.setZ(z);
+                                childNode.setAction(action);
+                                childNode.setStep(parentNode.getStep() + 1);
+                                childNode.setScore(childNode.getStep() + score(childStatus, endLongStatus));
+                                treeLayer.offer(childNode);
+                                avlTree.put(childStatus, childNode);
+
+                                // 找到终点状态
+                                if (childStatus == endLongStatus) {
+                                    System.out.format("treeSize:%d queueSize:%d treeLayerSize:%d%n", avlTree.size(), queue.size(), treeLayer.size());
+                                    return BFSBuildPassPath(childNode);
+                                }
+                            }
+                        }
+                    }
+                }
+                for (int i = 0; i < N && !treeLayer.isEmpty(); i++) {
+                    queue.add(treeLayer.poll());
                 }
             }
         }

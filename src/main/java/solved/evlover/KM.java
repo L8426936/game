@@ -14,12 +14,12 @@ public class KM {
         this.table = table;
         init();
 
-        for ( int x = 0; x < n; x++ ) {
+        for (int x = 0; x < n; x++) {
             bfs(x);
         }
 
         int value = 0;
-        for ( int x = 0; x < n; x++ ) {
+        for (int x = 0; x < n; x++) {
             value += table[x][xMatch[x]];
         }
         return value;
@@ -42,7 +42,7 @@ public class KM {
                 S[x] = true;
                 for (int y = 0; y < n; y++) {
                     int tmp = xl[x] + yl[y] - table[x][y];
-                    if ( tmp == 0 ) {  // 相等子树中的边
+                    if (tmp == 0) {  // 相等子树中的边
                         if (T[y]) {
                             continue;
                         }
@@ -60,23 +60,23 @@ public class KM {
                     }
                 }
             }
-            if ( find ) {
+            if (find) {
                 break;
             }
             qs = qe = 0;
-            for ( int i = 0; i < n; i++ ) {  // 根据a修改标号值
-                if ( S[i] ) {
+            for (int i = 0; i < n; i++) {  // 根据a修改标号值
+                if (S[i]) {
                     xl[i] -= a;
                     queue[qe++] = i;        // 把所有在S中的点加回到队列中
                 }
-                if ( T[i] ) {
+                if (T[i]) {
                     yl[i] += a;
                 }
             }
             a = Integer.MAX_VALUE;
         }
 
-        while ( endY != -1 ) {       // 找到可扩路最后的y点后，回溯并扩充
+        while (endY != -1) {       // 找到可扩路最后的y点后，回溯并扩充
             int preX = yPre[endY], preY = xMatch[preX];
             xMatch[preX] = endY;
             yMatch[endY] = preX;
@@ -89,9 +89,9 @@ public class KM {
         this.xl = new int[n];
         this.yl = new int[n];
         Arrays.fill(xl, Integer.MIN_VALUE);
-        for ( int x = 0; x < n; x++ ) {
-            for ( int y = 0; y < n; y++ ) {
-                if ( table[x][y] > xl[x] ) {
+        for (int x = 0; x < n; x++) {
+            for (int y = 0; y < n; y++) {
+                if (table[x][y] > xl[x]) {
                     xl[x] = table[x][y];
                 }
             }
