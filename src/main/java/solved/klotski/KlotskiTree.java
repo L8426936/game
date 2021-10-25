@@ -34,19 +34,17 @@ public class KlotskiTree {
                 return buildPassPath(parent);
             }
 
-            int empty1Position = 0, empty2Position = 0, emptyCount = 0, doubleEmptyType = 0;
-            for (int index = 0; index < 60; index += 3) {
+            int empty1Position = 0, empty2Position = 0, doubleEmptyType = 0;
+            for (int index = 0, emptyCount = 0; index < 60 && emptyCount < 2; index += 3) {
                 if ((parentStatus & (0X7L << index)) == 0) {
                     empty1Position = empty2Position;
                     empty2Position = index;
-                    if (++emptyCount >= 2) {
-                        break;
-                    }
+                    emptyCount++;
                 }
             }
 
-            singleEmptyMove(avlTree, queue, parent, empty1Position);
-            singleEmptyMove(avlTree, queue, parent, empty2Position);
+            singleEmpty(avlTree, queue, parent, empty1Position);
+            singleEmpty(avlTree, queue, parent, empty2Position);
 
             if ((empty1Position + 3 == empty2Position) && empty1Position / 12 == empty2Position / 12) {
                 // 空格横向联立
@@ -58,13 +56,13 @@ public class KlotskiTree {
 
             if (doubleEmptyType > 0) {
                 if (mode != ONE_CELL_ONLY) {
-                    smallSquareMove(avlTree, queue, parent, empty1Position, empty2Position, mode);
-                    smallSquareMove(avlTree, queue, parent, empty2Position, empty1Position, mode);
+                    doubleEmpty(avlTree, queue, parent, empty1Position, empty2Position, mode);
+                    doubleEmpty(avlTree, queue, parent, empty2Position, empty1Position, mode);
                 }
                 if (doubleEmptyType == 1) {
-                    horizontalMove(avlTree, queue, parent, empty1Position, empty2Position, mode);
+                    horizontalDoubleEmpty(avlTree, queue, parent, empty1Position, empty2Position, mode);
                 } else {
-                    verticalMove(avlTree, queue, parent, empty1Position, empty2Position, mode);
+                    verticalDoubleEmpty(avlTree, queue, parent, empty1Position, empty2Position, mode);
                 }
             }
         }
@@ -74,39 +72,47 @@ public class KlotskiTree {
 
     private int[] directions = {-12, 12, -3, 3};
 
-    private void singleEmptyMove(AVLTree<KlotskiNode> avlTree, Queue<KlotskiNode> queue, KlotskiNode parent, int dest) {
+    /**
+     * 单个空格
+     * @param avlTree
+     * @param queue
+     * @param parent
+     * @param emptyPosition
+     */
+    private void singleEmpty(AVLTree<KlotskiNode> avlTree, Queue<KlotskiNode> queue, KlotskiNode parent, int emptyPosition) {
         for (int direction = 0; direction < directions.length; direction++) {
-            int src = dest + directions[direction];
+            int src = emptyPosition + directions[direction];
             boolean inBound = (src >= 0 && src < 60);
             if (inBound) {
                 if (direction == 2 || direction == 3) {
-                    inBound = (src / 12 == dest / 12);
+                    inBound = (src / 12 == emptyPosition / 12);
                 }
                 if (inBound) {
                     long status = parent.getStatus(), type = (status >> src) & 0X7L;
                     if (type == 0X1L) {
-                        status ^= (type << src) | (type << dest);
+                        status ^= (type << src) | (type << emptyPosition);
                     } else if (type >= 0X2L && type <= 0X6L) {
                         int src2 = src + directions[direction];
                         if (src2 >= 0 && src2 < 60 && type == ((status >> src2) & 0X7L)) {
-                            status ^= (type << src2) | (type << dest);
+                            status ^= (type << src2) | (type << emptyPosition);
                         }
                     }
-                    if (avlTree.get(status) == null && avlTree.get(symmetryStatus(status)) == null) {
-                        KlotskiNode child = new KlotskiNode();
-                        child.setParent(parent);
-                        child.setStatus(status);
-                        child.setSrc(src);
-                        child.setDest(dest);
-                        queue.offer(child);
-                        avlTree.put(status, child);
-                    }
+                    nextChildNode(avlTree, queue, parent, status, src, emptyPosition);
                 }
             }
         }
     }
 
-    private void smallSquareMove(AVLTree<KlotskiNode> avlTree, Queue<KlotskiNode> queue, KlotskiNode parent, int empty1Position, int empty2Position, int mode) {
+    /**
+     * 空格联立
+     * @param avlTree
+     * @param queue
+     * @param parent
+     * @param empty1Position
+     * @param empty2Position
+     * @param mode
+     */
+    private void doubleEmpty(AVLTree<KlotskiNode> avlTree, Queue<KlotskiNode> queue, KlotskiNode parent, int empty1Position, int empty2Position, int mode) {
         for (int direction = 0; direction < directions.length; direction++) {
             int src = empty1Position + directions[direction];
             boolean inBound = (src >= 0 && src < 60);
@@ -124,15 +130,7 @@ public class KlotskiTree {
                     long status = parent.getStatus(), type = (status >> src) & 0X7L;
                     if (type == 0X1L) {
                         status ^= (type << src) | (type << empty2Position);
-                        if (avlTree.get(status) == null && avlTree.get(symmetryStatus(status)) == null) {
-                            KlotskiNode child = new KlotskiNode();
-                            child.setParent(parent);
-                            child.setStatus(status);
-                            child.setSrc(src);
-                            child.setDest(empty2Position);
-                            queue.offer(child);
-                            avlTree.put(status, child);
-                        }
+                        nextChildNode(avlTree, queue, parent, status, src, empty2Position);
                     }
                 }
             }
@@ -140,7 +138,7 @@ public class KlotskiTree {
     }
 
     /**
-     * 水平
+     * 空格水平联立
      * @param avlTree
      * @param queue
      * @param parent
@@ -148,7 +146,7 @@ public class KlotskiTree {
      * @param empty2Position
      * @param mode
      */
-    private void horizontalMove(AVLTree<KlotskiNode> avlTree, Queue<KlotskiNode> queue, KlotskiNode parent, int empty1Position, int empty2Position, int mode) {
+    private void horizontalDoubleEmpty(AVLTree<KlotskiNode> avlTree, Queue<KlotskiNode> queue, KlotskiNode parent, int empty1Position, int empty2Position, int mode) {
         for (int direction = 0; direction < directions.length; direction++) {
             int src1 = empty1Position + directions[direction];
             int src2 = empty2Position + directions[direction];
@@ -166,22 +164,14 @@ public class KlotskiTree {
                     } else if (type1 == 0X7L && type2 == 0X7L && (direction == 0 || direction == 1)) {
                         status ^= (type1 << (src1 + directions[direction])) | (type2 << (src2 + directions[direction])) | (type1 << empty1Position) | (type2 << empty2Position);
                     }
-                    if (avlTree.get(status) == null && avlTree.get(symmetryStatus(status)) == null) {
-                        KlotskiNode child = new KlotskiNode();
-                        child.setParent(parent);
-                        child.setStatus(status);
-                        child.setSrc(src1);
-                        child.setDest(empty1Position);
-                        queue.offer(child);
-                        avlTree.put(status, child);
-                    }
+                    nextChildNode(avlTree, queue, parent, status, src1, empty1Position);
                 }
             }
         }
     }
 
     /**
-     * 竖直
+     * 空格竖直联立
      * @param avlTree
      * @param queue
      * @param parent
@@ -189,7 +179,7 @@ public class KlotskiTree {
      * @param empty2Position
      * @param mode
      */
-    private void verticalMove(AVLTree<KlotskiNode> avlTree, Queue<KlotskiNode> queue, KlotskiNode parent, int empty1Position, int empty2Position, int mode) {
+    private void verticalDoubleEmpty(AVLTree<KlotskiNode> avlTree, Queue<KlotskiNode> queue, KlotskiNode parent, int empty1Position, int empty2Position, int mode) {
         for (int direction = 0; direction < directions.length; direction++) {
             int src1 = empty1Position + directions[direction];
             int src2 = empty2Position + directions[direction];
@@ -209,17 +199,21 @@ public class KlotskiTree {
                     } else if (type1 == 0X7L && type2 == 0X7L && (direction == 2 || direction == 3)) {
                         status ^= (type1 << (src1 + directions[direction])) | (type2 << (src2 + directions[direction])) | (type1 << empty1Position) | (type2 << empty2Position);
                     }
-                    if (avlTree.get(status) == null && avlTree.get(symmetryStatus(status)) == null) {
-                        KlotskiNode child = new KlotskiNode();
-                        child.setParent(parent);
-                        child.setStatus(status);
-                        child.setSrc(src1);
-                        child.setDest(empty1Position);
-                        queue.offer(child);
-                        avlTree.put(status, child);
-                    }
+                    nextChildNode(avlTree, queue, parent, status, src1, empty1Position);
                 }
             }
+        }
+    }
+
+    private void nextChildNode(AVLTree<KlotskiNode> avlTree, Queue<KlotskiNode> queue, KlotskiNode parent, long status, int src, int dest) {
+        if (avlTree.get(status) == null && avlTree.get(symmetryStatus(status)) == null) {
+            KlotskiNode child = new KlotskiNode();
+            child.setParent(parent);
+            child.setStatus(status);
+            child.setSrc(src);
+            child.setDest(dest);
+            queue.offer(child);
+            avlTree.put(status, child);
         }
     }
 

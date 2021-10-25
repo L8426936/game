@@ -1,19 +1,30 @@
 package solved.klotski;
 
+import com.sun.jna.Pointer;
+import com.sun.jna.platform.win32.GDI32Util;
+import com.sun.jna.platform.win32.User32;
+import com.sun.jna.platform.win32.WinDef;
+import org.opencv.core.Point;
 import org.opencv.core.*;
 import org.opencv.highgui.HighGui;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
-import java.nio.file.Path;
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.io.File;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class KlotskiPlayer {
-    private static final Path BASE_PATH = Paths.get(System.getProperty("user.dir"), "src", "main", "java", "solved", "klotski", "data");
+    private static final String DATA_PATH = Paths.get(System.getProperty("user.dir"), "src", "main", "java", "solved", "klotski", "data").toString() + File.separator;
     private static final Runtime runtime = Runtime.getRuntime();
+    private static final int WM_MOUSEMOVE = 0x200;
+    private static final int WM_LBUTTONDOWN = 0x201;
+    private static final int WM_LBUTTONUP = 0x202;
     private static int MARGIN_LEFT = Integer.MAX_VALUE, MARGIN_TOP = Integer.MAX_VALUE, SIDE = Integer.MAX_VALUE;
     private static Rect nextRound;
 
@@ -21,31 +32,31 @@ public class KlotskiPlayer {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
 
-    public static void autoPlay(int mode) {
+    public static void autoPlayOnMobile(int mode) {
         KlotskiTree klotskiTree = new KlotskiTree();
         long oldStatus = 0;
         for (int equalStatusCount = 0; equalStatusCount < 5; equalStatusCount++) {
             try {
                 long startTime = System.currentTimeMillis();
                 long flagTime = startTime;
-                long status = analysisStatus();
+                long status = analysisStatus(null);
                 if (oldStatus != status) {
-                    oldStatus = status;
-                    if (checkStatus(status)) {
-                        System.out.format("截图分析耗时%dms%n", System.currentTimeMillis() - flagTime);
-                        printlnStatus(status);
-                        System.out.println();
+                    equalStatusCount = 0;
+                }
+                oldStatus = status;
+                if (checkStatus(status)) {
+                    System.out.format("截图分析耗时%dms%n", System.currentTimeMillis() - flagTime);
+                    printlnStatus(status);
+                    System.out.println();
+                    flagTime = System.currentTimeMillis();
+                    List<KlotskiNode> klotskiNodes = klotskiTree.BFS(status, mode);
+                    System.out.format("搜索耗时%dms%n", System.currentTimeMillis() - flagTime);
+                    if (klotskiNodes != null) {
                         flagTime = System.currentTimeMillis();
-                        List<KlotskiNode> klotskiNodes = klotskiTree.BFS(status, mode);
-                        System.out.format("搜索耗时%dms%n", System.currentTimeMillis() - flagTime);
-                        if (klotskiNodes != null) {
-                            flagTime = System.currentTimeMillis();
-                            move(klotskiNodes);
-                            System.out.format("闯关耗时%dms%n", System.currentTimeMillis() - flagTime);
-                            next();
-                            System.out.format("总耗时%dms%n%n", System.currentTimeMillis() - startTime);
-                            equalStatusCount = 0;
-                        }
+                        move(klotskiNodes, null);
+                        System.out.format("闯关耗时%dms%n", System.currentTimeMillis() - flagTime);
+                        next(null);
+                        System.out.format("总耗时%dms%n%n", System.currentTimeMillis() - startTime);
                     }
                 }
             } catch (Exception e) {
@@ -55,22 +66,66 @@ public class KlotskiPlayer {
         System.exit(0);
     }
 
+    public static void autoPlayOnPC(int mode) {
+        User32 instance = User32.INSTANCE;
+        instance.EnumChildWindows(instance.FindWindow(null, "经典三国华容道"), (window, data) -> {
+            if (window != null) {
+                KlotskiTree klotskiTree = new KlotskiTree();
+                long oldStatus = 0;
+                for (int equalStatusCount = 0; equalStatusCount < 5; equalStatusCount++) {
+                    try {
+                        long startTime = System.currentTimeMillis();
+                        long flagTime = startTime;
+                        long status = analysisStatus(window);
+                        if (oldStatus != status) {
+                            equalStatusCount = 0;
+                        }
+                        oldStatus = status;
+                        if (checkStatus(status)) {
+                            System.out.format("截图分析耗时%dms%n", System.currentTimeMillis() - flagTime);
+                            printlnStatus(status);
+                            System.out.println();
+                            flagTime = System.currentTimeMillis();
+                            List<KlotskiNode> passPath = klotskiTree.BFS(status, mode);
+                            System.out.format("搜索耗时%dms%n", System.currentTimeMillis() - flagTime);
+                            if (passPath != null) {
+                                flagTime = System.currentTimeMillis();
+                                move(passPath, window);
+                                System.out.format("闯关耗时%dms%n", System.currentTimeMillis() - flagTime);
+                                next(window);
+                                System.out.format("总耗时%dms%n%n", System.currentTimeMillis() - startTime);
+                            }
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            System.exit(0);
+            return false;
+        }, Pointer.NULL);
+    }
+
     /**
      * 截屏到电脑
      * @throws Exception
      */
     private static void screenshot() throws Exception {
         runtime.exec("adb shell screencap /sdcard/klotski.png").waitFor();
-        runtime.exec("adb pull /sdcard/klotski.png " + BASE_PATH.toString()).waitFor();
+        runtime.exec("adb pull /sdcard/klotski.png " + DATA_PATH).waitFor();
     }
 
     /**
      * 分析棋盘
      * @return 返回盘面
      */
-    private static long analysisStatus() throws Exception {
-        screenshot();
-        Mat origin = Imgcodecs.imread(Paths.get(BASE_PATH.toString(), "klotski.png").toString());
+    private static long analysisStatus(WinDef.HWND window) throws Exception {
+        if (window == null) {
+            screenshot();
+        } else {
+            ImageIO.write(GDI32Util.getScreenshot(window), "png", Paths.get(DATA_PATH, "klotski.png").toFile());
+        }
+        Mat origin = Imgcodecs.imread(DATA_PATH + "klotski.png");
 
         Mat hsv = new Mat();
         Imgproc.cvtColor(origin, hsv, Imgproc.COLOR_BGR2HSV);
@@ -120,7 +175,15 @@ public class KlotskiPlayer {
             }
         }
 
-        Imgproc.resize(origin, origin, new Size(origin.width() * 0.4, origin.height() * 0.4));
+        if (window == null) {
+            Imgproc.resize(origin, origin, new Size(origin.width() * 0.4, origin.height() * 0.4));
+        } else {
+            // 显示器缩放百分比
+            AffineTransform defaultTransform = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().getDefaultTransform();
+            double scaleX = defaultTransform.getScaleX();
+            double scaleY = defaultTransform.getScaleY();
+            Imgproc.resize(origin, origin, new Size(origin.width() / scaleX, origin.height() / scaleY));
+        }
         HighGui.imshow("图片分析结果", origin);
 
         HighGui.waitKey(1);
@@ -129,49 +192,105 @@ public class KlotskiPlayer {
 
     /**
      * 移动棋子
-     * @param klotskiNodes
+     * @param passPath
+     * @param window
      * @throws Exception
      */
-    private static void move(List<KlotskiNode> klotskiNodes) throws Exception {
-        for (int i = 1; i < klotskiNodes.size() - 1; i++) {
-            KlotskiNode klotskiNode = klotskiNodes.get(i);
+    private static void move(List<KlotskiNode> passPath, WinDef.HWND window) throws Exception {
+        User32 instance = User32.INSTANCE;
+        for (int i = 1; i < passPath.size() - 1; i++) {
+            KlotskiNode klotskiNode = passPath.get(i);
             printlnStatus(klotskiNode.getStatus());
             System.out.println();
             if (klotskiNode.getSrcRow() == klotskiNode.getDestRow() || klotskiNode.getSrcCol() == klotskiNode.getDestCol()) {
+                if (window == null) {
+                    String command = String.format("adb shell input swipe %d %d %d %d 120", MARGIN_LEFT + SIDE * klotskiNode.getSrcCol() + (SIDE / 2),
+                            MARGIN_TOP + SIDE * klotskiNode.getSrcRow() + (SIDE / 2), MARGIN_LEFT + SIDE * klotskiNode.getDestCol() + (SIDE / 2),
+                            MARGIN_TOP + SIDE * klotskiNode.getDestRow() + (SIDE / 2));
+                    runtime.exec(command).waitFor();
+                } else {
+                    // (x & 0xffff) | (y << 16)
+                    long srcPosition = ((MARGIN_LEFT + SIDE * klotskiNode.getSrcCol() + (SIDE / 2)) & 0xffff) | ((MARGIN_TOP + SIDE * klotskiNode.getSrcRow() + (SIDE / 2)) << 16);
+                    long destPosition = ((MARGIN_LEFT + SIDE * klotskiNode.getDestCol() + (SIDE / 2)) & 0xffff) | ((MARGIN_TOP + SIDE * klotskiNode.getDestRow() + (SIDE / 2)) << 16);
+                    instance.SendMessage(window, WM_LBUTTONDOWN, null, new WinDef.LPARAM(srcPosition));
+                    instance.SendMessage(window, WM_MOUSEMOVE, null, new WinDef.LPARAM(destPosition));
+                    instance.SendMessage(window, WM_LBUTTONUP, null, null);
+                    Thread.sleep(200);
+                }
+            } else {
+                int middleRow = (klotskiNode.getSrcRow() + klotskiNode.getDestRow()) / 2;
+                int middleCol = (klotskiNode.getSrcCol() + klotskiNode.getDestCol()) / 2;
+                if (window == null) {
+                    String middle = String.format("adb shell input swipe %d %d %d %d 120", MARGIN_LEFT + SIDE * klotskiNode.getSrcCol() + (SIDE / 2),
+                            MARGIN_TOP + SIDE * klotskiNode.getSrcRow() + (SIDE / 2), MARGIN_LEFT + SIDE * middleCol + (SIDE / 2),
+                            MARGIN_TOP + SIDE * middleRow + (SIDE / 2));
+                    runtime.exec(middle).waitFor();
+                    String command = String.format("adb shell input swipe %d %d %d %d 120", MARGIN_LEFT + SIDE * middleCol + (SIDE / 2),
+                            MARGIN_TOP + SIDE * middleRow + (SIDE / 2), MARGIN_LEFT + SIDE * klotskiNode.getDestCol() + (SIDE / 2),
+                            MARGIN_TOP + SIDE * klotskiNode.getDestRow() + (SIDE / 2));
+                    runtime.exec(command).waitFor();
+                } else {
+                    // (x & 0xffff) | (y << 16)
+                    long srcPosition = ((MARGIN_LEFT + SIDE * klotskiNode.getSrcCol() + (SIDE / 2)) & 0xffff) | ((MARGIN_TOP + SIDE * klotskiNode.getSrcRow() + (SIDE / 2)) << 16);
+                    long middlePosition = ((MARGIN_LEFT + SIDE * middleCol + (SIDE / 2)) & 0xffff) | ((MARGIN_TOP + SIDE * middleRow + (SIDE / 2)) << 16);
+                    long destPosition = ((MARGIN_LEFT + SIDE * klotskiNode.getDestCol() + (SIDE / 2)) & 0xffff) | ((MARGIN_TOP + SIDE * klotskiNode.getDestRow() + (SIDE / 2)) << 16);
+
+                    instance.SendMessage(window, WM_LBUTTONDOWN, null, new WinDef.LPARAM(srcPosition));
+                    instance.SendMessage(window, WM_MOUSEMOVE, null, new WinDef.LPARAM(middlePosition));
+                    instance.SendMessage(window, WM_LBUTTONUP, null, null);
+                    Thread.sleep(200);
+
+                    instance.SendMessage(window, WM_LBUTTONDOWN, null, new WinDef.LPARAM(middlePosition));
+                    instance.SendMessage(window, WM_MOUSEMOVE, null, new WinDef.LPARAM(destPosition));
+                    instance.SendMessage(window, WM_LBUTTONUP, null, null);
+                    Thread.sleep(200);
+                }
+            }
+        }
+        KlotskiNode klotskiNode = passPath.get(passPath.size() - 1);
+        printlnStatus(klotskiNode.getStatus());
+        System.out.println();
+        if (klotskiNode.getSrcCol() == klotskiNode.getDestCol()) {
+            if (window == null) {
+                String command = String.format("adb shell input swipe %d %d %d %d 120", MARGIN_LEFT + SIDE * klotskiNode.getSrcCol() + (SIDE / 2),
+                        MARGIN_TOP + SIDE * klotskiNode.getSrcRow() + (SIDE / 2), MARGIN_LEFT + SIDE * klotskiNode.getDestCol() + (SIDE / 2),
+                        MARGIN_TOP + SIDE * (klotskiNode.getDestRow() + 1) + (SIDE / 2));
+                runtime.exec(command).waitFor();
+            } else {
+                // (x & 0xffff) | (y << 16)
+                long srcPosition = ((MARGIN_LEFT + SIDE * klotskiNode.getSrcCol() + (SIDE / 2)) & 0xffff) | ((MARGIN_TOP + SIDE * klotskiNode.getSrcRow() + (SIDE / 2)) << 16);
+                long destPosition = ((MARGIN_LEFT + SIDE * klotskiNode.getDestCol() + (SIDE / 2)) & 0xffff) | ((MARGIN_TOP + SIDE * (klotskiNode.getDestRow() + 1) + (SIDE / 2)) << 16);
+                instance.SendMessage(window, WM_LBUTTONDOWN, null, new WinDef.LPARAM(srcPosition));
+                instance.SendMessage(window, WM_MOUSEMOVE, null, new WinDef.LPARAM(destPosition));
+                instance.SendMessage(window, WM_LBUTTONUP, null, null);
+                Thread.sleep(200);
+            }
+        } else {
+            if (window == null) {
                 String command = String.format("adb shell input swipe %d %d %d %d 120", MARGIN_LEFT + SIDE * klotskiNode.getSrcCol() + (SIDE / 2),
                         MARGIN_TOP + SIDE * klotskiNode.getSrcRow() + (SIDE / 2), MARGIN_LEFT + SIDE * klotskiNode.getDestCol() + (SIDE / 2),
                         MARGIN_TOP + SIDE * klotskiNode.getDestRow() + (SIDE / 2));
                 runtime.exec(command).waitFor();
+                String lastStep = String.format("adb shell input swipe %d %d %d %d 120", MARGIN_LEFT + SIDE * klotskiNode.getSrcCol() + (SIDE / 2),
+                        MARGIN_TOP + SIDE * klotskiNode.getSrcRow() + (SIDE / 2), MARGIN_LEFT + SIDE * klotskiNode.getDestCol() + (SIDE / 2),
+                        MARGIN_TOP + SIDE * (klotskiNode.getDestRow() + 1) + (SIDE / 2));
+                runtime.exec(lastStep).waitFor();
             } else {
-                int middleRow = (klotskiNode.getSrcRow() + klotskiNode.getDestRow()) / 2;
-                int middleCol = (klotskiNode.getSrcCol() + klotskiNode.getDestCol()) / 2;
-                String middle = String.format("adb shell input swipe %d %d %d %d 120", MARGIN_LEFT + SIDE * klotskiNode.getSrcCol() + (SIDE / 2),
-                        MARGIN_TOP + SIDE * klotskiNode.getSrcRow() + (SIDE / 2), MARGIN_LEFT + SIDE * middleCol + (SIDE / 2),
-                        MARGIN_TOP + SIDE * middleRow + (SIDE / 2));
-                runtime.exec(middle).waitFor();
-                String command = String.format("adb shell input swipe %d %d %d %d 120", MARGIN_LEFT + SIDE * middleCol + (SIDE / 2),
-                        MARGIN_TOP + SIDE * middleRow + (SIDE / 2), MARGIN_LEFT + SIDE * klotskiNode.getDestCol() + (SIDE / 2),
-                        MARGIN_TOP + SIDE * klotskiNode.getDestRow() + (SIDE / 2));
-                runtime.exec(command).waitFor();
+                // (x & 0xffff) | (y << 16)
+                long srcPosition = ((MARGIN_LEFT + SIDE * klotskiNode.getSrcCol() + (SIDE / 2)) & 0xffff) | ((MARGIN_TOP + SIDE * klotskiNode.getSrcRow() + (SIDE / 2)) << 16);
+                long middlePosition = ((MARGIN_LEFT + SIDE * klotskiNode.getDestCol() + (SIDE / 2)) & 0xffff) | ((MARGIN_TOP + SIDE * klotskiNode.getDestRow() + (SIDE / 2)) << 16);
+                long destPosition = ((MARGIN_LEFT + SIDE * klotskiNode.getDestCol() + (SIDE / 2)) & 0xffff) | ((MARGIN_TOP + SIDE * (klotskiNode.getDestRow() + 1) + (SIDE / 2)) << 16);
+
+                instance.SendMessage(window, WM_LBUTTONDOWN, null, new WinDef.LPARAM(srcPosition));
+                instance.SendMessage(window, WM_MOUSEMOVE, null, new WinDef.LPARAM(middlePosition));
+                instance.SendMessage(window, WM_LBUTTONUP, null, null);
+                Thread.sleep(200);
+
+                instance.SendMessage(window, WM_LBUTTONDOWN, null, new WinDef.LPARAM(middlePosition));
+                instance.SendMessage(window, WM_MOUSEMOVE, null, new WinDef.LPARAM(destPosition));
+                instance.SendMessage(window, WM_LBUTTONUP, null, null);
+                Thread.sleep(200);
             }
-        }
-        KlotskiNode klotskiNode = klotskiNodes.get(klotskiNodes.size() - 1);
-        printlnStatus(klotskiNode.getStatus());
-        System.out.println();
-        if (klotskiNode.getSrcCol() == klotskiNode.getDestCol()) {
-            String command = String.format("adb shell input swipe %d %d %d %d 120", MARGIN_LEFT + SIDE * klotskiNode.getSrcCol() + (SIDE / 2),
-                    MARGIN_TOP + SIDE * klotskiNode.getSrcRow() + (SIDE / 2), MARGIN_LEFT + SIDE * klotskiNode.getDestCol() + (SIDE / 2),
-                    MARGIN_TOP + SIDE * (klotskiNode.getDestRow() + 1) + (SIDE / 2));
-            runtime.exec(command).waitFor();
-        } else {
-            String command = String.format("adb shell input swipe %d %d %d %d 120", MARGIN_LEFT + SIDE * klotskiNode.getSrcCol() + (SIDE / 2),
-                    MARGIN_TOP + SIDE * klotskiNode.getSrcRow() + (SIDE / 2), MARGIN_LEFT + SIDE * klotskiNode.getDestCol() + (SIDE / 2),
-                    MARGIN_TOP + SIDE * klotskiNode.getDestRow() + (SIDE / 2));
-            runtime.exec(command).waitFor();
-            String lastStep = String.format("adb shell input swipe %d %d %d %d 120", MARGIN_LEFT + SIDE * klotskiNode.getSrcCol() + (SIDE / 2),
-                    MARGIN_TOP + SIDE * klotskiNode.getSrcRow() + (SIDE / 2), MARGIN_LEFT + SIDE * klotskiNode.getDestCol() + (SIDE / 2),
-                    MARGIN_TOP + SIDE * (klotskiNode.getDestRow() + 1) + (SIDE / 2));
-            runtime.exec(lastStep).waitFor();
         }
     }
 
@@ -179,20 +298,37 @@ public class KlotskiPlayer {
      * 下一关
      * @throws Exception
      */
-    private static void next() throws Exception {
+    private static void next(WinDef.HWND window) throws Exception {
         if (nextRound == null) {
-            screenshot();
-            nextRound = matchTemplate("nextRound.png");
+            if (window == null) {
+                screenshot();
+                nextRound = matchTemplate("mobileNextRound.png");
+            } else {
+                Thread.sleep(1500);
+                ImageIO.write(GDI32Util.getScreenshot(window), "png", Paths.get(DATA_PATH, "klotski.png").toFile());
+                nextRound = matchTemplate("PCNextRound.png");
+            }
         }
         if (nextRound != null) {
-            runtime.exec(String.format("adb shell input tap %d %d", nextRound.x + (nextRound.width / 2), nextRound.y + (nextRound.height / 2))).waitFor();
-            Thread.sleep(300);
+            if (window == null) {
+                runtime.exec(String.format("adb shell input tap %d %d", nextRound.x + (nextRound.width / 2), nextRound.y + (nextRound.height / 2))).waitFor();
+                Thread.sleep(300);
+            } else {
+                Thread.sleep(1500);
+                // ImageIO.write(GDI32Util.getScreenshot(window), "png", Paths.get(DATA_PATH, System.currentTimeMillis() + ".png").toFile());
+                User32 instance = User32.INSTANCE;
+                // (x & 0xffff) | (y << 16)
+                long nextRoundPosition = ((nextRound.x + (nextRound.width / 2)) & 0xffff) | ((nextRound.y + (nextRound.height / 2)) << 16);
+                instance.SendMessage(window, WM_LBUTTONDOWN, null, new WinDef.LPARAM(nextRoundPosition));
+                instance.SendMessage(window, WM_LBUTTONUP, null, new WinDef.LPARAM(nextRoundPosition));
+                Thread.sleep(1500);
+            }
         }
     }
 
     private static Rect matchTemplate(String templateName) {
-        Mat image = Imgcodecs.imread(Paths.get(BASE_PATH.toString(), "klotski.png").toString(), Imgcodecs.IMREAD_GRAYSCALE);
-        Mat template = Imgcodecs.imread(Paths.get(BASE_PATH.toString(), templateName).toString(), Imgcodecs.IMREAD_GRAYSCALE);
+        Mat image = Imgcodecs.imread(DATA_PATH + "klotski.png", Imgcodecs.IMREAD_GRAYSCALE);
+        Mat template = Imgcodecs.imread(DATA_PATH + templateName, Imgcodecs.IMREAD_GRAYSCALE);
 
         Mat result = new Mat();
         Imgproc.matchTemplate(image, template, result, Imgproc.TM_CCOEFF_NORMED);
