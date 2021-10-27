@@ -20,7 +20,8 @@ public class MostLinkLinkTest {
 		// MostLinkLinkTree mostLinkLinkTree = new MostLinkLinkTree(gameInfo);
 		// mostLinkLinkTree.DFS();
 		// --------------------------------------------------------------------------------------------------------
-		MostLinkLinkPlayer.autoPlay(MostLinkLinkPlayer.OPENCV_ANALYSIS, MostLinkLinkPlayer.RANK_LIST);
+		// MostLinkLinkPlayer.autoPlayOnMobile(MostLinkLinkPlayer.OPENCV_ANALYSIS, MostLinkLinkPlayer.RANK_LIST);
+		MostLinkLinkPlayer.autoPlayOnPC(MostLinkLinkPlayer.OPENCV_ANALYSIS, MostLinkLinkPlayer.CHALLENGE);
 	}
 	
 }

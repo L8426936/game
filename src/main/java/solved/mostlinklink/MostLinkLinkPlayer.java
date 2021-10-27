@@ -1,5 +1,9 @@
 package solved.mostlinklink;
 
+import com.sun.jna.Pointer;
+import com.sun.jna.platform.win32.GDI32Util;
+import com.sun.jna.platform.win32.User32;
+import com.sun.jna.platform.win32.WinDef;
 import org.opencv.core.Point;
 import org.opencv.core.*;
 import org.opencv.highgui.HighGui;
@@ -9,6 +13,7 @@ import org.opencv.imgproc.Imgproc;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -31,8 +36,10 @@ public class MostLinkLinkPlayer {
      * <p>CHALLENGE：挑战赛模式</p>
      */
     public static final int OPENCV_ANALYSIS = 0, OPENCV_TEMPLATE_ANALYSIS = 1, ANALYSIS = 2, RANK_LIST = 0, CHALLENGE = 1;
-    private static final String IMAGE_PATH = Paths.get(System.getProperty("user.dir"), "src", "main", "java", "solved", "mostlinklink", "data").toString() + File.separator;
+    private static final String DATA_PATH = Paths.get(System.getProperty("user.dir"), "src", "main", "java", "solved", "mostlinklink", "data").toString() + File.separator;
     private static final Runtime runtime = Runtime.getRuntime();
+    private static final int WM_LBUTTONDOWN = 0x201;
+    private static final int WM_LBUTTONUP = 0x202;
     private static GameInfo.Point closePoint, nextPoint;
 
     static {
@@ -44,24 +51,23 @@ public class MostLinkLinkPlayer {
      * @param analysisType 分析方式，可选值OPENCV_ANALYSIS、OPENCV_TEMPLATE_ANALYSIS、ANALYSIS
      * @param playMode 游戏模式，可选值RANK_LIST、CHALLENGE
      */
-    public static void autoPlay(int analysisType, int playMode) {
-        long startTime, timestamp;
+    public static void autoPlayOnMobile(int analysisType, int playMode) {
         for (int tryAgainCount = 0; tryAgainCount < 15; tryAgainCount++) {
             try {
-                startTime = System.currentTimeMillis();
-                screenshot();
+                long startTime = System.currentTimeMillis(), timestamp;
+                screenshot(null);
                 System.out.format("截屏耗时:%d毫秒%n", System.currentTimeMillis() - startTime);
                 timestamp = System.currentTimeMillis();
                 GameInfo gameInfo = null;
                 switch (analysisType) {
                     case OPENCV_ANALYSIS:
-                        gameInfo = opencvAnalysis();
+                        gameInfo = opencvAnalysis(null);
                         break;
                     case OPENCV_TEMPLATE_ANALYSIS:
-                        gameInfo = opencvTemplateAnalysis();
+                        gameInfo = opencvTemplateAnalysis(null);
                         break;
                     case ANALYSIS:
-                        gameInfo = analysis();
+                        gameInfo = analysis(null);
                         break;
                 }
                 if (gameInfo != null) {
@@ -72,9 +78,9 @@ public class MostLinkLinkPlayer {
                     MostLinkLinkNode[] nodes = mostLinkLinkTree.DFS();
                     if (nodes != null) {
                         System.out.format("搜索耗时:%d毫秒%n", System.currentTimeMillis() - timestamp);
-                        drawPassPath(nodes, gameInfo);
+                        drawPassPath(null, nodes, gameInfo);
                         timestamp = System.currentTimeMillis();
-                        play(nodes, gameInfo);
+                        play(null, nodes, gameInfo);
                         System.out.format("滑动屏幕耗时:%d毫秒%n", System.currentTimeMillis() - timestamp);
                         tryAgainCount = 0;
                         if (playMode == RANK_LIST) {
@@ -89,7 +95,7 @@ public class MostLinkLinkPlayer {
                     System.out.println("分析失败，重新开始截屏");
                 }
                 if (playMode == RANK_LIST) {
-                    nextGame(analysisType);
+                    nextGame(null, analysisType);
                 }
                 System.out.format("耗费总时长:%d毫秒%n%n", System.currentTimeMillis() - startTime);
             } catch (Exception e) {
@@ -99,40 +105,101 @@ public class MostLinkLinkPlayer {
         System.exit(0);
     }
 
+    /**
+     *
+     * @param analysisType 分析方式，可选值OPENCV_ANALYSIS、OPENCV_TEMPLATE_ANALYSIS、ANALYSIS
+     * @param playMode 游戏模式，可选值RANK_LIST、CHALLENGE
+     */
+    public static void autoPlayOnPC(int analysisType, int playMode) {
+        User32 instance = User32.INSTANCE;
+        instance.EnumChildWindows(instance.FindWindow(null, "最强连一连"), (window, data) -> {
+            if (window != null) {
+                for (int tryAgainCount = 0; tryAgainCount < 15; tryAgainCount++) {
+                    try {
+                        long startTime = System.currentTimeMillis(), timestamp;
+                        screenshot(window);
+                        System.out.format("截屏耗时:%d毫秒%n", System.currentTimeMillis() - startTime);
+                        timestamp = System.currentTimeMillis();
+                        GameInfo gameInfo = null;
+                        switch (analysisType) {
+                            case OPENCV_ANALYSIS:
+                                gameInfo = opencvAnalysis(window);
+                                break;
+                            case OPENCV_TEMPLATE_ANALYSIS:
+                                gameInfo = opencvTemplateAnalysis(window);
+                                break;
+                            case ANALYSIS:
+                                gameInfo = analysis(window);
+                                break;
+                        }
+                        if (gameInfo != null) {
+                            System.out.format("图片分析耗时:%d毫秒%n", System.currentTimeMillis() - timestamp);
+                            printStatus(gameInfo.getStatus());
+                            MostLinkLinkTree mostLinkLinkTree = new MostLinkLinkTree(gameInfo);
+                            timestamp = System.currentTimeMillis();
+                            MostLinkLinkNode[] nodes = mostLinkLinkTree.DFS();
+                            if (nodes != null) {
+                                System.out.format("搜索耗时:%d毫秒%n", System.currentTimeMillis() - timestamp);
+                                drawPassPath(window, nodes, gameInfo);
+                                timestamp = System.currentTimeMillis();
+                                play(window, nodes, gameInfo);
+                                System.out.format("滑动屏幕耗时:%d毫秒%n", System.currentTimeMillis() - timestamp);
+                                tryAgainCount = 0;
+                                if (playMode == RANK_LIST) {
+                                    Thread.sleep(1000);
+                                } else {
+                                    Thread.sleep(800);
+                                }
+                            } else {
+                                System.out.println("游戏搜索失败，重新开始截屏");
+                            }
+                        } else {
+                            System.out.println("分析失败，重新开始截屏");
+                        }
+                        if (playMode == RANK_LIST) {
+                            nextGame(window, analysisType);
+                        }
+                        System.out.format("耗费总时长:%d毫秒%n%n", System.currentTimeMillis() - startTime);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            System.exit(0);
+            return false;
+        }, Pointer.NULL);
+    }
+
     // 截屏到电脑
-    private static void screenshot() throws Exception {
-        runtime.exec("adb shell screencap /sdcard/mostlinklink.png").waitFor();
-        runtime.exec("adb pull /sdcard/mostlinklink.png " + IMAGE_PATH).waitFor();
+    private static void screenshot(WinDef.HWND window) throws Exception {
+        if (window == null) {
+            runtime.exec("adb shell screencap /sdcard/mostlinklink.png").waitFor();
+            runtime.exec("adb pull /sdcard/mostlinklink.png " + DATA_PATH).waitFor();
+        } else {
+            Thread.sleep(500);
+            ImageIO.write(GDI32Util.getScreenshot(window), "png", Paths.get(DATA_PATH, "mostlinklink.png").toFile());
+        }
     }
 
     // 一定程度减少弹窗对图片分析的影响，有较大区域像素值接近游戏色块的话会分析错误
-    private static GameInfo opencvAnalysis() {
-        Mat original = Imgcodecs.imread(IMAGE_PATH + "mostlinklink.png");
-        // 去除无关游戏色块像素
-        Mat source = original.clone();
-        int gray = 187, deviation = 20;
-        byte[] pixels = new byte[3], black = new byte[3], white = {(byte) 255, (byte) 255, (byte) 255};
-        for (int r = 0; r < source.rows(); r++) {
-            for (int c = 0; c < source.cols(); c++) {
-                source.get(r, c, pixels);
-                if (pixels[0] == pixels[1] && pixels[1] == pixels[2]
-                        && Math.abs((pixels[0] & 0XFF) - gray) < deviation
-                        && Math.abs((pixels[1] & 0XFF) - gray) < deviation
-                        && Math.abs((pixels[2] & 0XFF) - gray) < deviation) {
-                    source.put(r, c, white);
-                } else {
-                    source.put(r, c, black);
-                }
-            }
-        }
+    private static GameInfo opencvAnalysis(WinDef.HWND window) {
+        Mat original = Imgcodecs.imread(DATA_PATH + "mostlinklink.png");
+
+        Mat hsv = new Mat();
+        Imgproc.cvtColor(original, hsv, Imgproc.COLOR_BGR2HSV);
+        Scalar lowHSV = new Scalar(0, 0, 204);
+        Scalar highHSV = new Scalar(0, 0, 204);
+        Core.inRange(hsv, lowHSV, highHSV, hsv);
         // 去除多余噪点
-        Imgproc.medianBlur(source, source, 9);
+        Imgproc.medianBlur(hsv, hsv, 3);
+
+        int gray = 187, deviation = 20;
+        byte[] pixels = new byte[3];
 
         Scalar color = new Scalar(0, 0, 255);
         // 找到图中所有矩形，并保留矩形中心的x，y
-        Imgproc.cvtColor(source, source, Imgproc.COLOR_RGB2GRAY);
         List<MatOfPoint> contours = new ArrayList<>();
-        Imgproc.findContours(source, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+        Imgproc.findContours(hsv, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
         Set<Integer> xSet = new HashSet<>();
         Set<Integer> ySet = new HashSet<>();
         for (int i = 0; i < contours.size(); i++) {
@@ -178,15 +245,15 @@ public class MostLinkLinkPlayer {
         gameInfo.setStatus(status);
         gameInfo.setPoints(points);
 
-        showMat("处理结果", source);
-        showMat("分析结果", original);
+        showMat(window, "处理结果", hsv);
+        showMat(window, "分析结果", original);
 
         return startPointCount == 1 ? gameInfo : null;
     }
 
     // 一定程度减少弹窗对图片分析的影响，左右边界游戏色块显示不全会分析错误
-    private static GameInfo opencvTemplateAnalysis() {
-        Mat original = Imgcodecs.imread(IMAGE_PATH + "mostlinklink.png");
+    private static GameInfo opencvTemplateAnalysis(WinDef.HWND window) {
+        Mat original = Imgcodecs.imread(DATA_PATH + "mostlinklink.png");
         // 去除无关游戏色块像素
         Mat source = original.clone();
         Imgproc.cvtColor(source, source, Imgproc.COLOR_RGB2GRAY);
@@ -199,7 +266,7 @@ public class MostLinkLinkPlayer {
 
         // 模板匹配
         Scalar color = new Scalar(0, 0, 255);
-        Mat template = Imgcodecs.imread(IMAGE_PATH + "block.png", Imgcodecs.IMREAD_GRAYSCALE);
+        Mat template = Imgcodecs.imread(DATA_PATH + "block.png", Imgcodecs.IMREAD_GRAYSCALE);
         Mat result = new Mat();
         Imgproc.matchTemplate(source, template, result, Imgproc.TM_CCOEFF_NORMED);
 
@@ -264,15 +331,15 @@ public class MostLinkLinkPlayer {
         gameInfo.setStatus(status);
         gameInfo.setPoints(points);
 
-        showMat("处理结果", source);
-        showMat("分析结果", original);
+        showMat(window, "处理结果", source);
+        showMat(window, "分析结果", original);
 
         return startPointCount == 1 ? gameInfo : null;
     }
 
     // 基于像素值的分析，有消息弹窗或是有较大区域像素值接近游戏色块的话会分析错误
-    private static GameInfo analysis() throws IOException {
-        BufferedImage image = ImageIO.read(new File(IMAGE_PATH + "mostlinklink.png"));
+    private static GameInfo analysis(WinDef.HWND window) throws IOException {
+        BufferedImage image = ImageIO.read(new File(DATA_PATH + "mostlinklink.png"));
         int height = image.getHeight(), width = image.getWidth();
         if (closePoint == null) {
             closePoint = new GameInfo.Point((int) (width * 0.856), (int) (height * 0.342));
@@ -397,7 +464,7 @@ public class MostLinkLinkPlayer {
                     ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                     ImageIO.write(image, "png", byteArrayOutputStream);
                     byteArrayOutputStream.flush();
-                    showMat("分析结果", Imgcodecs.imdecode(new MatOfByte(byteArrayOutputStream.toByteArray()), Imgcodecs.IMREAD_COLOR));
+                    showMat(window, "分析结果", Imgcodecs.imdecode(new MatOfByte(byteArrayOutputStream.toByteArray()), Imgcodecs.IMREAD_COLOR));
 
                     return startPointCount == 1 ? gameInfo : null;
                 }
@@ -407,51 +474,103 @@ public class MostLinkLinkPlayer {
     }
 
     // 触摸滑动灰格
-    private static void play(MostLinkLinkNode[] nodes, GameInfo gameInfo) throws Exception {
+    private static void play(WinDef.HWND window, MostLinkLinkNode[] nodes, GameInfo gameInfo) throws Exception {
         GameInfo.Point[][] points = gameInfo.getPoints();
-        for (int i = 1; i < nodes.length; i++) {
-            int j = i;
-            MostLinkLinkNode startNode = nodes[i];
-            while (j + 1 < nodes.length && (startNode.getRow() == nodes[j + 1].getRow() || startNode.getCol() == nodes[j + 1].getCol())) {
-                j++;
+        if (window == null) {
+            for (int i = 1; i < nodes.length; i++) {
+                int j = i;
+                MostLinkLinkNode startNode = nodes[i];
+                while (j + 1 < nodes.length && (startNode.getRow() == nodes[j + 1].getRow() || startNode.getCol() == nodes[j + 1].getCol())) {
+                    j++;
+                }
+                MostLinkLinkNode endNode = nodes[j];
+                GameInfo.Point startPoint = points[startNode.getRow()][startNode.getCol()], endPoint = points[endNode.getRow()][endNode.getCol()];
+                String command = String.format("adb shell input touchscreen swipe %d %d %d %d %d", startPoint.getX(), startPoint.getY(), endPoint.getX(), endPoint.getY(), (j - i) * 50);
+                runtime.exec(command).waitFor();
+                i = j;
             }
-            MostLinkLinkNode endNode = nodes[j];
-            GameInfo.Point startPoint = points[startNode.getRow()][startNode.getCol()], endPoint = points[endNode.getRow()][endNode.getCol()];
-            String command = String.format("adb shell input touchscreen swipe %d %d %d %d %d", startPoint.getX(), startPoint.getY(), endPoint.getX(), endPoint.getY(), (j - i) * 50);
-            runtime.exec(command).waitFor();
-            i = j;
+        } else {
+            User32 instance = User32.INSTANCE;
+            for (int i = 1; i < nodes.length; i++) {
+                MostLinkLinkNode node = nodes[i];
+                GameInfo.Point point = points[node.getRow()][node.getCol()];
+                // (x & 0xffff) | (y << 16)
+                long position = (point.getX() & 0xffff) | (point.getY() << 16);
+                instance.SendMessage(window, WM_LBUTTONDOWN, null, new WinDef.LPARAM(position));
+                instance.SendMessage(window, WM_LBUTTONUP, null, null);
+            }
         }
     }
 
     // 下一关
-    private static void nextGame(int analysisType) throws Exception {
-        switch (analysisType) {
-            case OPENCV_ANALYSIS: case OPENCV_TEMPLATE_ANALYSIS:
-                if (closePoint == null) {
-                    screenshot();
-                    closePoint = matchTemplate("close.png");
-                }
-                if (closePoint != null) {
-                    runtime.exec(String.format("adb shell input touchscreen tap %d %d", closePoint.getX(), closePoint.getY())).waitFor();
-                }
-                if (nextPoint == null) {
-                    screenshot();
-                    nextPoint = matchTemplate("next.png");
-                }
-                if (nextPoint != null) {
-                    runtime.exec(String.format("adb shell input touchscreen tap %d %d", nextPoint.getX(), nextPoint.getY())).waitFor();
-                }
-                break;
-            case ANALYSIS:
-                runtime.exec(String.format("adb shell input touchscreen tap %d %d", closePoint.getX(), closePoint.getY())).waitFor(); // 关闭双倍奖励
-                runtime.exec(String.format("adb shell input touchscreen tap %d %d", nextPoint.getX(), nextPoint.getY())).waitFor(); // 下一关
-                break;
+    private static void nextGame(WinDef.HWND window, int analysisType) throws Exception {
+        if (window == null) {
+            switch (analysisType) {
+                case OPENCV_ANALYSIS: case OPENCV_TEMPLATE_ANALYSIS:
+                    if (closePoint == null) {
+                        screenshot(null);
+                        closePoint = matchTemplate(null, "close.png");
+                    }
+                    if (closePoint != null) {
+                        runtime.exec(String.format("adb shell input touchscreen tap %d %d", closePoint.getX(), closePoint.getY())).waitFor();
+                    }
+                    if (nextPoint == null) {
+                        screenshot(null);
+                        nextPoint = matchTemplate(null, "next.png");
+                    }
+                    if (nextPoint != null) {
+                        runtime.exec(String.format("adb shell input touchscreen tap %d %d", nextPoint.getX(), nextPoint.getY())).waitFor();
+                    }
+                    break;
+                case ANALYSIS:
+                    runtime.exec(String.format("adb shell input touchscreen tap %d %d", closePoint.getX(), closePoint.getY())).waitFor(); // 关闭双倍奖励
+                    runtime.exec(String.format("adb shell input touchscreen tap %d %d", nextPoint.getX(), nextPoint.getY())).waitFor(); // 下一关
+                    break;
+            }
+        } else {
+            User32 instance = User32.INSTANCE;
+            switch (analysisType) {
+                case OPENCV_ANALYSIS: case OPENCV_TEMPLATE_ANALYSIS:
+                    Thread.sleep(800);
+                    if (closePoint == null) {
+                        screenshot(window);
+                        closePoint = matchTemplate(window, "PCClose.png");
+                    }
+                    if (closePoint != null) {
+                        // (x & 0xffff) | (y << 16)
+                        long position = (closePoint.getX() & 0xffff) | (closePoint.getY() << 16);
+                        instance.SendMessage(window, WM_LBUTTONDOWN, null, new WinDef.LPARAM(position));
+                        instance.SendMessage(window, WM_LBUTTONUP, null, new WinDef.LPARAM(position));
+                        Thread.sleep(800);
+                    }
+                    if (nextPoint == null) {
+                        screenshot(window);
+                        nextPoint = matchTemplate(window, "PCNext.png");
+                    }
+                    if (nextPoint != null) {
+                        // (x & 0xffff) | (y << 16)
+                        long position = (nextPoint.getX() & 0xffff) | (nextPoint.getY() << 16);
+                        instance.SendMessage(window, WM_LBUTTONDOWN, null, new WinDef.LPARAM(position));
+                        instance.SendMessage(window, WM_LBUTTONUP, null, new WinDef.LPARAM(position));
+                    }
+                    break;
+                case ANALYSIS:
+                    // (x & 0xffff) | (y << 16)
+                    long closePosition = (closePoint.getX() & 0xffff) | (closePoint.getY() << 16);
+                    instance.SendMessage(window, WM_LBUTTONDOWN, null, new WinDef.LPARAM(closePosition));
+                    instance.SendMessage(window, WM_LBUTTONUP, null, new WinDef.LPARAM(closePosition));
+                    // (x & 0xffff) | (y << 16)
+                    long nextPosition = (nextPoint.getX() & 0xffff) | (nextPoint.getY() << 16);
+                    instance.SendMessage(window, WM_LBUTTONDOWN, null, new WinDef.LPARAM(nextPosition));
+                    instance.SendMessage(window, WM_LBUTTONUP, null, new WinDef.LPARAM(nextPosition));
+                    break;
+            }
         }
     }
 
-    private static GameInfo.Point matchTemplate(String templateName) {
-        Mat source = Imgcodecs.imread(IMAGE_PATH + "mostlinklink.png");
-        Mat template = Imgcodecs.imread(IMAGE_PATH + templateName, Imgcodecs.IMREAD_GRAYSCALE);
+    private static GameInfo.Point matchTemplate(WinDef.HWND window, String templateName) {
+        Mat source = Imgcodecs.imread(DATA_PATH + "mostlinklink.png");
+        Mat template = Imgcodecs.imread(DATA_PATH + templateName, Imgcodecs.IMREAD_GRAYSCALE);
 
         Mat image = source.clone();
         Imgproc.cvtColor(source, image, Imgproc.COLOR_RGB2GRAY);
@@ -465,14 +584,14 @@ public class MostLinkLinkPlayer {
                     new Point(maxLoc.x, maxLoc.y),
                     new Point(maxLoc.x + template.width(), maxLoc.y + template.height()),
                     new Scalar(0, 0, 255), Imgproc.LINE_4);
-            showMat("分析结果", source);
+            showMat(window, "分析结果", source);
             return new GameInfo.Point((int) (maxLoc.x + (template.width() / 2)), (int) (maxLoc.y + (template.height() / 2)));
         }
         return null;
     }
 
-    private static void drawPassPath(MostLinkLinkNode[] nodes, GameInfo gameInfo) {
-        Mat original = Imgcodecs.imread(IMAGE_PATH + "mostlinklink.png");
+    private static void drawPassPath(WinDef.HWND window, MostLinkLinkNode[] nodes, GameInfo gameInfo) {
+        Mat original = Imgcodecs.imread(DATA_PATH + "mostlinklink.png");
         Scalar color = new Scalar(0, 0, 255);
         GameInfo.Point[][] points = gameInfo.getPoints();
         for (int i = 0; i < nodes.length - 1; i++) {
@@ -480,11 +599,19 @@ public class MostLinkLinkPlayer {
             GameInfo.Point startPoint = points[startNode.getRow()][startNode.getCol()], endPoint = points[endNode.getRow()][endNode.getCol()];
             Imgproc.line(original, new Point(startPoint.getX(), startPoint.getY()), new Point(endPoint.getX(), endPoint.getY()), color, Imgproc.LINE_AA);
         }
-        showMat("通关路径", original);
+        showMat(window, "通关路径", original);
     }
 
-    private static void showMat(String winame, Mat mat) {
-        Imgproc.resize(mat, mat, new Size(mat.width() * 0.4, mat.height() * 0.4));
+    private static void showMat(WinDef.HWND window, String winame, Mat mat) {
+        if (window == null) {
+            Imgproc.resize(mat, mat, new Size(mat.width() * 0.4, mat.height() * 0.4));
+        } else {
+            // 显示器缩放百分比
+            AffineTransform defaultTransform = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().getDefaultTransform();
+            double scaleX = defaultTransform.getScaleX();
+            double scaleY = defaultTransform.getScaleY();
+            Imgproc.resize(mat, mat, new Size(mat.width() / scaleX, mat.height() / scaleY));
+        }
         HighGui.imshow(winame, mat);
         HighGui.waitKey(1);
         // 不会关闭已存在的同名窗口，只刷新图片
