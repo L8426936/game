@@ -3,6 +3,8 @@ package solved.evlover;
 import solved.util.AVLTree;
 
 import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class EvloverTree {
 
@@ -519,15 +521,19 @@ public class EvloverTree {
      * @param startStatus
      * @param endStatus
      * @param N
+     * @param ratio 每搜索一层，N *= ratio
      * @return
      */
-    public List<EvloverNode> beamSearch(char[] startStatus, char[] endStatus, int N) {
+    public List<EvloverNode> beamSearch(char[] startStatus, char[] endStatus, int N, float ratio) {
         long startLongStatus = EvloverUtil.arrayToLong(startStatus);
         long endLongStatus = EvloverUtil.arrayToLong(endStatus);
 
         if (startLongStatus != endLongStatus && EvloverUtil.bitCount(startLongStatus) == EvloverUtil.bitCount(endLongStatus)) {
             Queue<EvloverNode> queue = new LinkedList<>();
-            AVLTree<EvloverNode> avlTree = new AVLTree<>();
+            Map<Long, EvloverNode> avlTree = new ConcurrentHashMap<>();
+            Queue<EvloverNode> treeLayer = new ConcurrentLinkedQueue<>();
+            Queue<EvloverNode> priorityQueue = new PriorityQueue<>(Comparator.comparingInt(EvloverNode::getScore));
+            AtomicBoolean keep = new AtomicBoolean(true);
 
             EvloverNode rootNode = new EvloverNode();
             rootNode.setStatus(startLongStatus);
@@ -536,39 +542,56 @@ public class EvloverTree {
 
             int[] actions = {EvloverUtil.P, EvloverUtil.C, EvloverUtil.A};
             while (!queue.isEmpty()) {
-                Queue<EvloverNode> treeLayer = new PriorityQueue<>(Comparator.comparingInt(EvloverNode::getScore));
+                ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
                 while (!queue.isEmpty()) {
                     EvloverNode parentNode = queue.poll();
-                    long parentStatus = parentNode.getStatus();
-                    for (int index : clickIndex) {
-                        int x = evloverUtil.indexToX(index), y = evloverUtil.indexToY(index), z = evloverUtil.indexToZ(index);
-                        for (int action : actions) {
-                            long childStatus = nextStatus(parentStatus, x, y, z, action);
-                            if (avlTree.get(childStatus) == null) {
-                                EvloverNode childNode = new EvloverNode();
-                                childNode.setParent(parentNode);
-                                childNode.setStatus(childStatus);
-                                childNode.setX(x);
-                                childNode.setY(y);
-                                childNode.setZ(z);
-                                childNode.setAction(action);
-                                childNode.setStep(parentNode.getStep() + 1);
-                                childNode.setScore(childNode.getStep() + score(childStatus, endLongStatus));
-                                treeLayer.offer(childNode);
-                                avlTree.put(childStatus, childNode);
+                    service.execute(() -> {
+                        if (keep.get()) {
+                            long parentStatus = parentNode.getStatus();
+                            for (int index : clickIndex) {
+                                int x = evloverUtil.indexToX(index), y = evloverUtil.indexToY(index), z = evloverUtil.indexToZ(index);
+                                for (int action : actions) {
+                                    long childStatus = nextStatus(parentStatus, x, y, z, action);
+                                    if (avlTree.get(childStatus) == null) {
+                                        EvloverNode childNode = new EvloverNode();
+                                        avlTree.put(childStatus, childNode);
+                                        childNode.setParent(parentNode);
+                                        childNode.setStatus(childStatus);
+                                        childNode.setX(x);
+                                        childNode.setY(y);
+                                        childNode.setZ(z);
+                                        childNode.setAction(action);
+                                        childNode.setStep(parentNode.getStep() + 1);
+                                        childNode.setScore(childNode.getStep() + score(childStatus, endLongStatus));
+                                        treeLayer.offer(childNode);
 
-                                // 找到终点状态
-                                if (childStatus == endLongStatus) {
-                                    System.out.format("treeSize:%d queueSize:%d treeLayerSize:%d%n", avlTree.size(), queue.size(), treeLayer.size());
-                                    return BFSBuildPassPath(childNode);
+                                        // 找到终点状态
+                                        if (childStatus == endLongStatus) {
+                                            keep.set(false);
+                                            System.out.format("treeSize:%d queueSize:%d treeLayerSize:%d%n", avlTree.size(), queue.size(), treeLayer.size());
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
+                    });
                 }
-                for (int i = 0; i < N && !treeLayer.isEmpty(); i++) {
-                    queue.add(treeLayer.poll());
+                service.shutdown();
+                try {
+                    while (!service.awaitTermination(1, TimeUnit.MINUTES));
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
+                if (!keep.get()) {
+                    return BFSBuildPassPath(avlTree.get(endLongStatus));
+                }
+                priorityQueue.addAll(treeLayer);
+                for (int i = 0; i < N && !priorityQueue.isEmpty(); i++) {
+                    queue.add(priorityQueue.poll());
+                }
+                N *= ratio;
+                priorityQueue.clear();
+                treeLayer.clear();
             }
         }
         return null;
