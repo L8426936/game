@@ -1,10 +1,6 @@
 package solved.evlover;
 
-import solved.util.AVLTree;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class EvloverUtil {
 
@@ -128,17 +124,17 @@ public class EvloverUtil {
         List<char[]> allStatus = allStatus(layer, count);
         System.out.format("allStatusSum: %d%n", allStatus.size());
         List<char[]> allUniqueStatus = new ArrayList<>();
-        AVLTree<char[]> allStatusAVLTree = new AVLTree<>();
+        Map<Long, char[]> allStatusMap = new HashMap<>();
         for (int i = 0; i < allStatus.size(); i++) {
             long status = arrayToLong(allStatus.get(i));
-            if (allStatusAVLTree.get(status) == null) {
+            if (allStatusMap.get(status) == null) {
                 allUniqueStatus.add(allStatus.get(i));
                 for (int symmetryType = 1; symmetryType <= 0X7F; symmetryType <<= 1) {
-                    allStatusAVLTree.put(symmetryStatus(status, symmetryType), allStatus.get(i));
+                    allStatusMap.put(symmetryStatus(status, symmetryType), allStatus.get(i));
                 }
                 for (int rotationCount = 1; rotationCount <= 5; rotationCount++) {
                     status = clockwiseRotationStatus(status);
-                    allStatusAVLTree.put(status, allStatus.get(i));
+                    allStatusMap.put(status, allStatus.get(i));
                 }
             }
         }
