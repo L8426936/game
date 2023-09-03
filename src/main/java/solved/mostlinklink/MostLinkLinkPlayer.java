@@ -4,6 +4,7 @@ import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.GDI32Util;
 import com.sun.jna.platform.win32.User32;
 import com.sun.jna.platform.win32.WinDef;
+import nu.pattern.OpenCV;
 import org.opencv.core.Point;
 import org.opencv.core.*;
 import org.opencv.highgui.HighGui;
@@ -43,7 +44,7 @@ public class MostLinkLinkPlayer {
     private static GameInfo.Point closePoint, nextPoint;
 
     static {
-        System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+        OpenCV.loadShared();
     }
 
     /**
