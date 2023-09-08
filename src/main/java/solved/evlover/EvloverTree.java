@@ -181,52 +181,38 @@ public class EvloverTree {
                 EvloverNode parentNode = queue.poll();
                 long parentStatus = parentNode.getStatus();
                 int commonSymmetry = endStatusSymmetry > 0 ? evloverUtil.symmetry(parentStatus) & endStatusSymmetry : 0;
-                // 记录已经点击过的位置，对称位置无需再次点击
-                long logClickIndex = 0;
                 for (int value : clickIndex) {
                     int x = evloverUtil.indexToX(value), y = evloverUtil.indexToY(value), z = evloverUtil.indexToZ(value);
-                    int index = evloverUtil.index(x, y, z);
-                    // 当前位置没有被点击过
-                    if ((logClickIndex & (1L << index)) == 0) {
-                        for (int action : actions) {
-                            long childStatus = nextStatus(parentStatus, x, y, z, action);
+                    for (int action : actions) {
+                        long childStatus = nextStatus(parentStatus, x, y, z, action);
+                        boolean add = map.get(childStatus) == null;
+                        if (add) {
+                            EvloverNode childNode = new EvloverNode();
+                            childNode.setParent(parentNode);
+                            childNode.setStatus(childStatus);
+                            childNode.setX(x);
+                            childNode.setY(y);
+                            childNode.setZ(z);
+                            childNode.setAction(action);
 
-                            boolean add = map.get(childStatus) == null;
-                            for (int symmetryType = 1; add && symmetryType <= commonSymmetry; symmetryType <<= 1) {
-                                long symmetryStatus = evloverUtil.symmetryStatus(childStatus, symmetryType & commonSymmetry);
-                                if (symmetryStatus != childStatus) {
-                                    add = map.get(symmetryStatus) == null;
-                                }
-                            }
-                            if (add) {
-                                EvloverNode childNode = new EvloverNode();
-                                childNode.setParent(parentNode);
-                                childNode.setStatus(childStatus);
-                                childNode.setX(x);
-                                childNode.setY(y);
-                                childNode.setZ(z);
-                                childNode.setAction(action);
+                            map.put(childStatus, childNode);
 
-                                queue.offer(childNode);
-                                map.put(childStatus, childNode);
-
-                                // 找到终点状态
-                                if (childStatus == endLongStatus) {
-                                    System.out.format("mapSize:%d queueSize:%d%n", map.size(), queue.size());
-                                    return BFSBuildPassPath(childNode);
-                                }
+                            // 找到终点状态
+                            if (childStatus == endLongStatus) {
+                                System.out.format("mapSize:%d queueSize:%d%n", map.size(), queue.size());
+                                return BFSBuildPassPath(childNode);
                             }
                         }
-                        logClickIndex |= 1L << index;
-                        for (int symmetryType = 1; symmetryType <= commonSymmetry; symmetryType <<= 1) {
-                            // 记录对称的点击位置
-                            if ((symmetryType & commonSymmetry) > 0) {
-                                int symmetryX = EvloverUtil.symmetryX(x, y, z, symmetryType & commonSymmetry);
-                                int symmetryY = EvloverUtil.symmetryY(x, y, z, symmetryType & commonSymmetry);
-                                int symmetryZ = EvloverUtil.symmetryZ(x, y, z, symmetryType & commonSymmetry);
-                                int symmetryIndex = evloverUtil.index(symmetryX, symmetryY, symmetryZ);
-                                logClickIndex |= 1L << symmetryIndex;
+
+                        for (int symmetryType = 1; add && symmetryType <= commonSymmetry; symmetryType <<= 1) {
+                            long symmetryStatus = evloverUtil.symmetryStatus(childStatus, symmetryType & commonSymmetry);
+                            if (symmetryStatus != childStatus) {
+                                add = map.get(symmetryStatus) == null;
                             }
+                        }
+
+                        if (add) {
+                            queue.offer(map.get(childStatus));
                         }
                     }
                 }
@@ -379,52 +365,38 @@ public class EvloverTree {
                     EvloverNode parentNode = queue.poll();
                     long parentStatus = parentNode.getStatus();
                     int commonSymmetry = statusSymmetry > 0 ? evloverUtil.symmetry(parentStatus) & statusSymmetry : 0;
-                    // 记录已经点击过的位置，对称位置无需再次点击
-                    long logClickIndex = 0;
                     for (int k = startIndex; k != borderIndex; k += offset) {
                         int x = evloverUtil.indexToX(clickIndex[k]), y = evloverUtil.indexToY(clickIndex[k]), z = evloverUtil.indexToZ(clickIndex[k]);
-                        int index = evloverUtil.index(x, y, z);
-                        // 当前位置没有被点击过
-                        if ((logClickIndex & (1L << index)) == 0) {
-                            for (int action : actions) {
-                                long childStatus = nextStatus(parentStatus, x, y, z, action);
-                                boolean add = map.get(childStatus) == null;
+                        for (int action : actions) {
+                            long childStatus = nextStatus(parentStatus, x, y, z, action);
+                            boolean add = map.get(childStatus) == null;
+                            if (add) {
+                                EvloverNode childNode = new EvloverNode();
+                                childNode.setParent(parentNode);
+                                childNode.setStatus(childStatus);
+                                childNode.setX(x);
+                                childNode.setY(y);
+                                childNode.setZ(z);
+                                childNode.setAction(action);
 
-                                for (int symmetryType = 1; add && symmetryType <= commonSymmetry; symmetryType <<= 1) {
-                                    long symmetryStatus = evloverUtil.symmetryStatus(childStatus, symmetryType & commonSymmetry);
-                                    if (symmetryStatus != childStatus) {
-                                        add = map.get(symmetryStatus) == null;
-                                    }
-                                }
-                                if (add) {
-                                    EvloverNode childNode = new EvloverNode();
-                                    childNode.setParent(parentNode);
-                                    childNode.setStatus(childStatus);
-                                    childNode.setX(x);
-                                    childNode.setY(y);
-                                    childNode.setZ(z);
-                                    childNode.setAction(action);
+                                map.put(childStatus, childNode);
 
-                                    queue.offer(childNode);
-                                    map.put(childStatus, childNode);
-
-                                    // 找到相同状态
-                                    if (checkMap.get(childStatus) != null) {
-                                        System.out.format("mapSize:%d queueSize:%d%n", startMap.size() + endMap.size(), startQueue.size() + endQueue.size());
-                                        return BBFSBuildPassPath(childStatus, startMap, endMap);
-                                    }
+                                // 找到相同状态
+                                if (checkMap.get(childStatus) != null) {
+                                    System.out.format("mapSize:%d queueSize:%d%n", startMap.size() + endMap.size(), startQueue.size() + endQueue.size());
+                                    return BBFSBuildPassPath(childStatus, startMap, endMap);
                                 }
                             }
-                        }
-                        logClickIndex |= 1L << index;
-                        for (int symmetryType = 1; symmetryType <= commonSymmetry; symmetryType <<= 1) {
-                            // 记录对称的点击位置
-                            if ((symmetryType & commonSymmetry) > 0) {
-                                int symmetryX = EvloverUtil.symmetryX(x, y, z, symmetryType & commonSymmetry);
-                                int symmetryY = EvloverUtil.symmetryY(x, y, z, symmetryType & commonSymmetry);
-                                int symmetryZ = EvloverUtil.symmetryZ(x, y, z, symmetryType & commonSymmetry);
-                                int symmetryIndex = evloverUtil.index(symmetryX, symmetryY, symmetryZ);
-                                logClickIndex |= 1L << symmetryIndex;
+
+                            for (int symmetryType = 1; add && symmetryType <= commonSymmetry; symmetryType <<= 1) {
+                                long symmetryStatus = evloverUtil.symmetryStatus(childStatus, symmetryType & commonSymmetry);
+                                if (symmetryStatus != childStatus) {
+                                    add = map.get(symmetryStatus) == null;
+                                }
+                            }
+
+                            if (add) {
+                                queue.offer(map.get(childStatus));
                             }
                         }
                     }

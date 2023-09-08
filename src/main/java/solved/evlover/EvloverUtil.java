@@ -458,7 +458,7 @@ public class EvloverUtil {
             if ((status & (1L << index)) > 0) {
                 // 去除已检查点
                 status ^= 1L << index;
-                int symmetryX = -indexToY[index], symmetryY = -indexToX[index], symmetryZ = -indexToZ[index];
+                int symmetryX = indexToX[index], symmetryY = indexToZ[index], symmetryZ = indexToY[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
                 symmetryStatus |= 1L << symmetryIndex;
             }
@@ -478,7 +478,7 @@ public class EvloverUtil {
             if ((status & (1L << index)) > 0) {
                 // 去除已检查点
                 status ^= 1L << index;
-                int symmetryX = -indexToX[index], symmetryY = -indexToZ[index], symmetryZ = -indexToY[index];
+                int symmetryX = indexToZ[index], symmetryY = indexToY[index], symmetryZ = indexToX[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
                 symmetryStatus |= 1L << symmetryIndex;
             }
@@ -498,7 +498,7 @@ public class EvloverUtil {
             if ((status & (1L << index)) > 0) {
                 // 去除已检查点
                 status ^= 1L << index;
-                int symmetryX = -indexToZ[index], symmetryY = -indexToY[index], symmetryZ = -indexToX[index];
+                int symmetryX = indexToY[index], symmetryY = indexToX[index], symmetryZ = indexToZ[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
                 symmetryStatus |= 1L << symmetryIndex;
             }
@@ -518,7 +518,7 @@ public class EvloverUtil {
             if ((status & (1L << index)) > 0) {
                 // 去除已检查点
                 status ^= 1L << index;
-                int symmetryX = indexToY[index], symmetryY = indexToX[index], symmetryZ = indexToZ[index];
+                int symmetryX = -indexToX[index], symmetryY = -indexToZ[index], symmetryZ = -indexToY[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
                 symmetryStatus |= 1L << symmetryIndex;
             }
@@ -538,7 +538,7 @@ public class EvloverUtil {
             if ((status & (1L << index)) > 0) {
                 // 去除已检查点
                 status ^= 1L << index;
-                int symmetryX = indexToX[index], symmetryY = indexToZ[index], symmetryZ = indexToY[index];
+                int symmetryX = -indexToZ[index], symmetryY = -indexToY[index], symmetryZ = -indexToX[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
                 symmetryStatus |= 1L << symmetryIndex;
             }
@@ -558,7 +558,7 @@ public class EvloverUtil {
             if ((status & (1L << index)) > 0) {
                 // 去除已检查点
                 status ^= 1L << index;
-                int symmetryX = indexToZ[index], symmetryY = indexToY[index], symmetryZ = indexToX[index];
+                int symmetryX = -indexToY[index], symmetryY = -indexToX[index], symmetryZ = -indexToZ[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
                 symmetryStatus |= 1L << symmetryIndex;
             }
@@ -635,7 +635,7 @@ public class EvloverUtil {
         for (int index = 0; status > 0; index++) {
             // 当前点有值
             if ((status & (1L << index)) > 0) {
-                int symmetryX = -indexToY[index], symmetryY = -indexToX[index], symmetryZ = -indexToZ[index];
+                int symmetryX = indexToX[index], symmetryY = indexToZ[index], symmetryZ = indexToY[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
                 if ((status & (1L << symmetryIndex)) > 0) {
                     // 对称点有值，移除检查的点、对称点
@@ -657,7 +657,7 @@ public class EvloverUtil {
         for (int index = 0; status > 0; index++) {
             // 当前点有值
             if ((status & (1L << index)) > 0) {
-                int symmetryX = -indexToX[index], symmetryY = -indexToZ[index], symmetryZ = -indexToY[index];
+                int symmetryX = indexToZ[index], symmetryY = indexToY[index], symmetryZ = indexToX[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
                 if ((status & (1L << symmetryIndex)) > 0) {
                     // 对称点有值，移除检查的点、对称点
@@ -679,7 +679,7 @@ public class EvloverUtil {
         for (int index = 0; status > 0; index++) {
             // 当前点有值
             if ((status & (1L << index)) > 0) {
-                int symmetryX = -indexToZ[index], symmetryY = -indexToY[index], symmetryZ = -indexToX[index];
+                int symmetryX = indexToY[index], symmetryY = indexToX[index], symmetryZ = indexToZ[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
                 if ((status & (1L << symmetryIndex)) > 0) {
                     // 对称点有值，移除检查的点、对称点
@@ -701,7 +701,7 @@ public class EvloverUtil {
         for (int index = 0; status > 0; index++) {
             // 当前点有值
             if ((status & (1L << index)) > 0) {
-                int symmetryX = indexToY[index], symmetryY = indexToX[index], symmetryZ = indexToZ[index];
+                int symmetryX = -indexToX[index], symmetryY = -indexToZ[index], symmetryZ = -indexToY[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
                 if ((status & (1L << symmetryIndex)) > 0) {
                     // 对称点有值，移除检查的点、对称点
@@ -723,7 +723,7 @@ public class EvloverUtil {
         for (int index = 0; status > 0; index++) {
             // 当前点有值
             if ((status & (1L << index)) > 0) {
-                int symmetryX = indexToX[index], symmetryY = indexToZ[index], symmetryZ = indexToY[index];
+                int symmetryX = -indexToZ[index], symmetryY = -indexToY[index], symmetryZ = -indexToX[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
                 if ((status & (1L << symmetryIndex)) > 0) {
                     // 对称点有值，移除检查的点、对称点
@@ -745,7 +745,7 @@ public class EvloverUtil {
         for (int index = 0; status > 0; index++) {
             // 当前点有值
             if ((status & (1L << index)) > 0) {
-                int symmetryX = indexToZ[index], symmetryY = indexToY[index], symmetryZ = indexToX[index];
+                int symmetryX = -indexToY[index], symmetryY = -indexToX[index], symmetryZ = -indexToZ[index];
                 int symmetryIndex = index(symmetryX, symmetryY, symmetryZ);
                 if ((status & (1L << symmetryIndex)) > 0) {
                     // 对称点有值，移除检查的点、对称点
