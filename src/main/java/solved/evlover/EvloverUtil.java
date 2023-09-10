@@ -26,9 +26,10 @@ public class EvloverUtil {
     public EvloverUtil(int layer) {
         this.layer = layer;
 
-        indexToX = new int[3 * layer * (layer + 1) + 1];
-        indexToY = new int[3 * layer * (layer + 1) + 1];
-        indexToZ = new int[3 * layer * (layer + 1) + 1];
+        int blank = 3 * layer * (layer + 1) + 1;
+        indexToX = new int[blank];
+        indexToY = new int[blank];
+        indexToZ = new int[blank];
 
         for (int index = 0, z = -layer; z <= layer; z++) {
             for (int x = -layer; x <= layer; x++) {
@@ -62,12 +63,13 @@ public class EvloverUtil {
      * @return if count > 3 * layer * (layer + 1) + 1, return []
      */
     public static char[] randomStatus(int layer, int count) {
-        if (count > 3 * layer * (layer + 1) + 1) {
-            return null;
+        int blank = 3 * layer * (layer + 1) + 1;
+        if (count > blank) {
+            return new char[blank];
         }
 
-        char[] randomStatus = new char[3 * layer * (layer + 1) + 1];
-        for (int index = 3 * layer * (layer + 1); index >= 0; index--) {
+        char[] randomStatus = new char[blank];
+        for (int index = blank - 1; index >= 0; index--) {
             randomStatus[index] = count > index ? '1' : '0';
         }
         // System.out.println(Arrays.toString(randomStatus));
@@ -84,18 +86,77 @@ public class EvloverUtil {
     }
 
     /**
+     * <p>返回所有数字型状态</p>
+     * @param layer 六边形层数，最大值：4
+     * @param count 点的数量，最大值：61
+     * @return
+     */
+    public static List<Long> allLongStatus(int layer, int count) {
+        int blank = 3 * layer * (layer + 1) + 1;
+        if (layer < 0 || layer > 4 || count < 0 || count > 61 || count > blank) {
+            return Collections.EMPTY_LIST;
+        }
+
+        char[] originStatus = new char[blank];
+        for (int index = blank - 1; index >= 0; index--) {
+            originStatus[index] = count > index ? '1' : '0';
+        }
+
+        List<Long> allStatus = new ArrayList<>();
+        allStatus.add(arrayToLong(originStatus));
+
+        for (int i = count - 1, j = 0; i >= 0; i--) {
+            for (int k = allStatus.size(); j < k; j++) {
+                long status = allStatus.get(j);
+                for (int m = i; m + 1 < blank && ((status >> (m + 1)) & 1L) == 0; m++) {
+                    status = ((status & (1L << m)) << 1) | (~(1L << m) & status);
+                    allStatus.add(status);
+                }
+            }
+        }
+        return allStatus;
+    }
+
+    /**
+     * <p>返回所有数组型状态，去除所有旋转、对称</p>
+     * @param count 点的数量
+     * @return
+     */
+    public List<Long> allUniqueLongStatus(int count) {
+        List<Long> allStatus = allLongStatus(layer, count);
+        System.out.format("allStatusSum: %d%n", allStatus.size());
+        List<Long> allUniqueStatus = new ArrayList<>();
+        Map<Long, Long> allStatusMap = new LinkedHashMap<>();
+        for (int i = 0; i < allStatus.size(); i++) {
+            long status = allStatus.get(i);
+            if (allStatusMap.get(status) == null) {
+                allUniqueStatus.add(allStatus.get(i));
+                for (int symmetryType = 1; symmetryType <= 0X7F; symmetryType <<= 1) {
+                    allStatusMap.put(symmetryStatus(status, symmetryType), allStatus.get(i));
+                }
+                for (int rotationCount = 1; rotationCount <= 5; rotationCount++) {
+                    status = clockwiseRotationStatus(status);
+                    allStatusMap.put(status, allStatus.get(i));
+                }
+            }
+        }
+        return allUniqueStatus;
+    }
+
+    /**
      * <p>返回所有数组型状态</p>
      * @param layer 六边形层数
      * @param count 点的数量
      * @return
      */
-    public static List<char[]> allStatus(int layer, int count) {
-        if (count > 3 * layer * (layer + 1) + 1) {
-            return null;
+    public static List<char[]> allCharStatus(int layer, int count) {
+        int blank = 3 * layer * (layer + 1) + 1;
+        if (layer < 0 || count < 0 || count > blank) {
+            return Collections.EMPTY_LIST;
         }
 
-        char[] originStatus = new char[3 * layer * (layer + 1) + 1];
-        for (int index = 3 * layer * (layer + 1); index >= 0; index--) {
+        char[] originStatus = new char[blank];
+        for (int index = blank - 1; index >= 0; index--) {
             originStatus[index] = count > index ? '1' : '0';
         }
 
@@ -120,8 +181,8 @@ public class EvloverUtil {
      * @param count 点的数量
      * @return
      */
-    public List<char[]> allUniqueStatus(int count) {
-        List<char[]> allStatus = allStatus(layer, count);
+    public List<char[]> allUniqueCharStatus(int count) {
+        List<char[]> allStatus = allCharStatus(layer, count);
         System.out.format("allStatusSum: %d%n", allStatus.size());
         List<char[]> allUniqueStatus = new ArrayList<>();
         Map<Long, char[]> allStatusMap = new HashMap<>();

@@ -147,7 +147,7 @@ public class EvloverTree {
                 }
             }
         }
-        return null;
+        return Collections.EMPTY_LIST;
     }
 
     public List<EvloverNode> BFS(char[] startStatus, char[] endStatus) {
@@ -218,7 +218,7 @@ public class EvloverTree {
                 }
             }
         }
-        return null;
+        return Collections.EMPTY_LIST;
     }
 
     /**
@@ -301,7 +301,7 @@ public class EvloverTree {
                 }
             }
         }
-        return null;
+        return Collections.EMPTY_LIST;
     }
 
     /**
@@ -403,7 +403,7 @@ public class EvloverTree {
                 }
             }
         }
-        return null;
+        return Collections.EMPTY_LIST;
     }
 
     /**
@@ -479,7 +479,7 @@ public class EvloverTree {
                 N *= ratio;
             }
         }
-        return null;
+        return Collections.EMPTY_LIST;
     }
 
     /**
@@ -577,7 +577,7 @@ public class EvloverTree {
                 N *= ratio;
             }
         }
-        return null;
+        return Collections.EMPTY_LIST;
     }
 
     public int score(long currentStatus, long endStatus) {
@@ -648,6 +648,7 @@ public class EvloverTree {
                 childStatus |= ((parentStatus >> evloverUtil.index(x, y - 1, z + 1)) & 1L) << evloverUtil.index(x + 1, y - 1, z);
                 break;
             default:
+                return parentStatus;
         }
         parentStatus ^= parentStatus & (1L << evloverUtil.index(x, y + 1, z - 1));
         parentStatus ^= parentStatus & (1L << evloverUtil.index(x + 1, y, z - 1));
