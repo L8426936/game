@@ -97,13 +97,13 @@ public class EvloverUtil {
             return Collections.EMPTY_LIST;
         }
 
-        char[] originStatus = new char[blank];
-        for (int index = blank - 1; index >= 0; index--) {
-            originStatus[index] = count > index ? '1' : '0';
+        long originStatus = 0;
+        for (int index = 0; index < count; index++) {
+            originStatus |= 1L << index;
         }
 
         List<Long> allStatus = new ArrayList<>();
-        allStatus.add(arrayToLong(originStatus));
+        allStatus.add(originStatus);
 
         for (int i = count - 1, j = 0; i >= 0; i--) {
             for (int k = allStatus.size(); j < k; j++) {
